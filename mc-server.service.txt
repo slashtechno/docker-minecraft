@@ -1,0 +1,9 @@
+[Unit]
+Description= minecraft server service Docker MC server
+
+[Service]
+User=root
+WorkingDirectory=/root/minecraft
+ExecStart=/usr/lib/jvm/java-17-openjdk/bin/java -Xms512M -Xmx20242M -jar spigot* nogui
+[Install]
+WantedBy=multi-user.target
