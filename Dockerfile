@@ -21,6 +21,7 @@ RUN cd /root/minecraft/; java -Xms512M -Xmx2024M -jar /root/minecraft/spigot* no
 RUN rm /root/minecraft/eula.txt
 RUN wget -O /root/minecraft/eula.txt https://raw.githubusercontent.com/slashtechno/docker-minecraft/master/eula.txt 
 # Download service
-RUN wget -O /etc/systemd/system/mc-server.service https://raw.githubusercontent.com/slashtechno/docker-minecraft/master/mc-server.service
-RUN systemctl enable mc-server.service 
-RUN systemctl start mc-server.service
+# RUN wget -O /etc/systemd/system/mc-server.service https://raw.githubusercontent.com/slashtechno/docker-minecraft/master/mc-server.service
+# RUN systemctl enable mc-server.service 
+# RUN systemctl start mc-server.service
+CMD [["cd"],["/root/minecraft/"],["java"],["-Xms512M"],["-Xmx2024M"],["-jar"],"[/root/minecraft/spigot*"],["nogui"]]
