@@ -12,7 +12,7 @@ with open ("original_server.properties", "r") as original_config_file:
     original_config = original_config_file.read()
     original_config_file.close()
 new_config = original_config.replace("rcon.password=", "rcon.password="+password)
-new_config = original_config.replace("rcon.port=", "rcon.port="+port)
+new_config = original_config.replace("rcon.port=25575", "rcon.port="+port)
 # Write to server.properties
 with open ("server.properties", "w") as server_config:
     server_config.write(new_config)
