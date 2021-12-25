@@ -12,7 +12,7 @@
 4. Create container with `docker run -t -d -p 25565:25565 --name docker-minecraft-container docker-minecraft`  
   a. You can change the port that the server uses (outside of the container) by changing the first occurence of 25565.
 
-### Access Console
+<!--### Access Console
 To access the console of the server, run the following:
-`docker attach docker-minecraft-container`
+`docker attach docker-minecraft-container`-->
 Done!
