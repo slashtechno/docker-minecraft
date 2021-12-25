@@ -5,11 +5,13 @@
 * Docker
 * Linux
 
-### To use
+### To use  
+###### NOTE:  
+###### You may need to prefix the Docker commands with sudo
 1. Clone the repo with `git clone https://github.com/slashtechno/docker-minecraft/`
 2. Change to the directory with `cd docker-minecraft`
 3. Create Docker image with `docker build -t docker-minecraft .`
-4. Create container with `docker run -t -d -p 25565:25565 25575:25575 --name docker-minecraft-container docker-minecraft`  
+4. Create container with `docker run -t -d -p 25565:25565 -p 25575:25575 --name docker-minecraft-container docker-minecraft`  
   a. You can change the port that the server uses (outside of the container) by changing the first occurence of 25565.  
 Done!
 
