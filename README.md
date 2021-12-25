@@ -24,3 +24,11 @@ Install `mcrcon` by following the instructions on the [mcrcon Github repository]
 If you are on the same computer as the server is running, run the following    
 `mcrcon -H localhost -P <port you set> -p <password you set> -t`  
 If you are on a diffrent computer, you can run the same command except you need to replace localhost with the server address
+
+### RAM Limitations  
+When experimenting with running a Minecraft server in Docker on my Raspberry Pi with 4 gigabytes of RAM, I noticed some limitations.  
+One of these was the container consuming too much RAM, to fix this, I decreased the amount of RAM allocated to the Minecraft server.  
+If you have less than 4 gigabytes of RAM, you may need to edit the Dockerfile. If you have more, you may prefer to increase the amount of RAM allocated.  
+#### Change the amount of RAM allocated  
+To change the amount of maximum RAM allocated change the numbers immediately after -Xmx and add `G` for migabytes or `M` for megabytes.  
+To change the amount of minimum RAM allocated change the numbers immediately after -Xms and add `G` for migabytes or `M` for megabytes.  
