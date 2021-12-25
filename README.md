@@ -10,9 +10,10 @@
 2. Change to the directory with `cd docker-minecraft`
 3. Create Docker image with `docker build -t docker-minecraft .`
 4. Create container with `docker run -t -d -p 25565:25565 --name docker-minecraft-container docker-minecraft`  
-  a. You can change the port that the server uses (outside of the container) by changing the first occurence of 25565.
-
-<!--### Access Console
-To access the console of the server, run the following:
-`docker attach docker-minecraft-container`-->
+  a. You can change the port that the server uses (outside of the container) by changing the first occurence of 25565.  
 Done!
+
+### Access Console  
+In order to access the console of the server, rcon must be set up.  
+Run `config-rcon.py`, to do this, make sure you are in the cloned repository and run it with Python.  
+This can be accomplished with `python3 config-rcon.py`
