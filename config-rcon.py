@@ -19,12 +19,16 @@ with open ("server.properties", "w") as server_config:
     server_config.close()
 
 # Stop the docker container
+print("Stopping the container\n")
 os.system("sudo docker stop docker-minecraft-container")
 # Remove server.properties
+print("Removing server.properties in container\n")
 os.system("sudo docker exec docker-minecraft-container rm -rf /root/minecraft/server.properties")
 # Copy server.properties to /root/minecraft/server.properties
+print("Copying server.properties to the container")
 os.system("sudo docker cp server.properties docker-minecraft-container:/root/minecraft/server.properties")
 # Start the docker container
+print("Starting the container")
 os.system("sudo docker start docker-minecraft-container")
 
 """
