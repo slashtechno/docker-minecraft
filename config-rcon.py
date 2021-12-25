@@ -12,16 +12,20 @@ with open ("original_server.properties", "r") as original_config_file:
     original_config = original_config_file.read()
     original_config_file.close()
 new_config = original_config.replace("rcon.password=", "rcon.password="+password)
+new_config = original_config.replace("rcon.port=", "rcon.port="+port)
 # Write to server.properties
 with open ("server.properties", "w") as server_config:
     server_config.write(new_config)
     server_config.close()
 
+# Stop the docker container
+os.system("sudo docker stop docker-minecraft-container")
 # Remove server.properties
 os.system("sudo docker exec docker-minecraft-container rm -rf /root/minecraft/server.properties")
 # Copy server.properties to /root/minecraft/server.properties
 os.system("sudo docker cp server.properties docker-minecraft-container:/root/minecraft/server.properties")
-
+# Start the docker container
+os.system("sudo docker start docker-minecraft-container")
 
 """
 NOTES:

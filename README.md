@@ -14,6 +14,13 @@
 Done!
 
 ### Access Console  
+#### Configure rcon  
 In order to access the console of the server, rcon must be set up.  
 Run `config-rcon.py`, to do this, make sure you are in the cloned repository and run it with Python.  
 This can be accomplished with `python3 config-rcon.py`
+#### Connect to the console  
+While there are many rcon clients, one popular client is [mcrcon](https://github.com/Tiiffi/mcrcon) (other clients should work however)  
+Install `mcrcon` by following the instructions on the [mcrcon Github repository](https://github.com/Tiiffi/mcrcon)  
+If you are on the same computer as the server is running, run the following    
+`mcrcon -H localhost -P <port you set> -p <password you set> -t`  
+If you are on a diffrent computer, you can run the same command except you need to replace localhost with the server address
