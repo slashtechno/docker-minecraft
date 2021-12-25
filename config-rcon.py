@@ -25,7 +25,7 @@ os.system("sudo docker exec docker-minecraft-container rm -rf /root/minecraft/se
 print("Copying server.properties to the container")
 os.system("sudo docker cp server.properties docker-minecraft-container:/root/minecraft/server.properties")
 # Restart the docker container
-print("Retarting the container")
+print("Retarting the container\n")
 os.system("sudo docker restart docker-minecraft-container")
 
 """
