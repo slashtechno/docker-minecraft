@@ -1,6 +1,7 @@
 import os
 import json
-
+# Variables
+original_version="1.18.1"
 # Functions
 def add_image():
 	version = input("What version would you like this image to be?")
@@ -17,6 +18,15 @@ def save_configuration(configuration):
 		configuration_json = json.dumps(configuration, indent=4)
 		config_file.write(configuration_json)
 		config_file.close()
+def create_image(version):
+	# Copy Dockerfile
+	with open("Dockerfile", "r") as dockerfile:
+		original_dockerfile=dockerfile.read()
+		dockerfile.close()
+	with open("Dockerfile_mc"+version, "w") as dockerfile:
+		new_dockerfile = original_dockerfile.replace("1.18.1", version)
+		dockerfile.write(new_dockerfile)
+		dockerfile.close()	
 
 	
 
