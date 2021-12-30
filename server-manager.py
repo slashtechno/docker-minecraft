@@ -2,8 +2,23 @@ import os
 import json
 
 # Functions
-def create_image():
+def add_image():
 	version = input("What version would you like this image to be?")
+	name = "docker_mc"+version
+	if {"name":"docker_mc"+version} not in configuration["images"]:
+		create_image(version)
+		print(name+" created")
+		configuration["images"].append({"name":"docker_mc"+version, "version": version})
+		print(configuration)
+		save_configuration(configuration)
+	
+def save_configuration(configuration):
+	with open("config.json", "w") as config_file:
+		configuration_json = json.dumps(configuration, indent=4)
+		config_file.write(configuration_json)
+		config_file.close()
+
+	
 
 
 print("This program will ask for authentication in order to use sudo\n")
@@ -14,7 +29,8 @@ if os.path.exists("config.json"):
 		config_json = config_file.read()
 	configuration = json.loads(config_json)
 else:
-	create_image()
+	configuration = {"images": []}
+	add_image()
 	with open("config.json", "r") as config_file:
 		config_json = config_file.read()
 	configuration = json.loads(config_json)
