@@ -24,29 +24,11 @@ def create_image(version):
 		original_dockerfile=dockerfile.read()
 		dockerfile.close()
 	with open("Dockerfile_mc"+version, "w") as dockerfile:
-		new_dockerfile = original_dockerfile.replace("1.18.1", version)
+		new_dockerfile = original_dockerfile.replace(original_version, version)
 		dockerfile.write(new_dockerfile)
-		dockerfile.close()	
-
-	
-
-
-print("This program will ask for authentication in order to use sudo\n")
-# Load config
-configuration = {"containers": [], "images": []}
-if os.path.exists("config.json"):
-	with open("config.json", "r") as config_file:
-		config_json = config_file.read()
-	configuration = json.loads(config_json)
-else:
-	configuration = {"images": []}
-	add_image()
-	with open("config.json", "r") as config_file:
-		config_json = config_file.read()
-	configuration = json.loads(config_json)
-
-
-
+		dockerfile.close()
+	os.system("docker build -t docker_mc" + version + " --file Dockerfile_mc"+version)
+	print("For testing\n""docker build -t docker_mc" + version + "--file Dockerfile_mc"+version)
 # Set up rcon 
  
 def config_rcon():
@@ -76,6 +58,21 @@ def config_rcon():
 	# Restart the docker container
 	print("Retarting the container\n")
 	os.system("sudo docker restart docker-minecraft-container")
+
+
+print("This program will ask for authentication in order to use sudo\n")
+# Load config
+configuration = {"containers": [], "images": []}
+if os.path.exists("config.json"):
+	with open("config.json", "r") as config_file:
+		config_json = config_file.read()
+	configuration = json.loads(config_json)
+else:
+	configuration = {"images": []}
+	add_image()
+	with open("config.json", "r") as config_file:
+		config_json = config_file.read()
+	configuration = json.loads(config_json)
 
 """
 NOTES:
