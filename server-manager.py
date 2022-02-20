@@ -4,17 +4,6 @@ import json
 original_version="1.18.1"
 # Functions
 
-# add functions add to the config, while create functions create the sp
-def add_image():
-	version = input("What version would you like this image to be?")
-	name = "docker_mc"+version
-	if {"name":"docker_mc"+version} not in configuration["images"]:
-		create_image(version)
-		print(name+" created")
-		configuration["images"].append({"name":"docker_mc"+version, "version": version})
-		print(configuration)
-		save_configuration(configuration)
-	
 def save_configuration(configuration):
 	with open("config.json", "w") as config_file:
 		configuration_json = json.dumps(configuration, indent=4)
@@ -28,11 +17,27 @@ def load_configuration():
 	else:
 		configuration = {"images": []}
 		print("The configuration file is blank or does not exist.\nRunning image creation script.")
-		add_image()
+		add_image(True)
 		# The following commands get run again as the configuration needs to be reloaded
 		with open("config.json", "r") as config_file:
 			config_json = config_file.read()
 		configuration = json.loads(config_json)
+		return configuration
+
+def add_image(skip_load):
+	if skip_load == False:
+		configuration = load_configuration()
+	else:
+		configuration = {"images": []}
+	version = input("What version would you like this image to be?")
+	name = "docker_mc"+version
+	if {"name":"docker_mc"+version} not in configuration["images"]:
+		create_image(version)
+		print(name+" created")
+		configuration["images"].append({"name":"docker_mc"+version, "version": version})
+		print(configuration)
+		save_configuration(configuration)
+	
 def create_image(version):
 	# Copy Dockerfile
 	with open("Dockerfile", "r") as dockerfile:
@@ -42,9 +47,9 @@ def create_image(version):
 		new_dockerfile = original_dockerfile.replace(original_version, version)
 		dockerfile.write(new_dockerfile)
 		dockerfile.close()
-	os.system("docker build -t docker_mc" + version + " --file Dockerfile_mc"+version)
-	print("For testing\n""docker build -t docker_mc" + version + "--file Dockerfile_mc"+version)
-# def add_container():
+	os.system("docker build -t docker_mc" + version + " --file Dockerfile_mc"+version + " .")
+def add_container():
+	configuration = load_configuration()
 
 # Set up rcon 
 def config_rcon():
