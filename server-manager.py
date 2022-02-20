@@ -3,6 +3,8 @@ import json
 # Variables
 original_version="1.18.1"
 # Functions
+
+# add functions add to the config, while create functions create the sp
 def add_image():
 	version = input("What version would you like this image to be?")
 	name = "docker_mc"+version
@@ -18,6 +20,19 @@ def save_configuration(configuration):
 		configuration_json = json.dumps(configuration, indent=4)
 		config_file.write(configuration_json)
 		config_file.close()
+def load_configuration():
+	if os.path.exists("config.json"):
+		with open("config.json", "r") as config_file:
+			config_json = config_file.read()
+		configuration = json.loads(config_json)
+	else:
+		configuration = {"images": []}
+		print("The configuration file is blank or does not exist.\nRunning image creation script.")
+		add_image()
+		# The following commands get run again as the configuration needs to be reloaded
+		with open("config.json", "r") as config_file:
+			config_json = config_file.read()
+		configuration = json.loads(config_json)
 def create_image(version):
 	# Copy Dockerfile
 	with open("Dockerfile", "r") as dockerfile:
@@ -29,8 +44,9 @@ def create_image(version):
 		dockerfile.close()
 	os.system("docker build -t docker_mc" + version + " --file Dockerfile_mc"+version)
 	print("For testing\n""docker build -t docker_mc" + version + "--file Dockerfile_mc"+version)
+# def add_container():
+
 # Set up rcon 
- 
 def config_rcon():
 	# Set up rcon 
 	# Request user input
@@ -62,17 +78,7 @@ def config_rcon():
 
 print("This program will ask for authentication in order to use sudo\n")
 # Load config
-configuration = {"containers": [], "images": []}
-if os.path.exists("config.json"):
-	with open("config.json", "r") as config_file:
-		config_json = config_file.read()
-	configuration = json.loads(config_json)
-else:
-	configuration = {"images": []}
-	add_image()
-	with open("config.json", "r") as config_file:
-		config_json = config_file.read()
-	configuration = json.loads(config_json)
+load_configuration()
 
 """
 NOTES:
