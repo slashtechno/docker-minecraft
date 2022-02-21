@@ -14,22 +14,20 @@ def load_configuration():
 		with open("config.json", "r") as config_file:
 			config_json = config_file.read()
 		configuration = json.loads(config_json)
+		return configuration
 	else:
-		configuration = {"images": []}
 		print("The configuration file is blank or does not exist.\nRunning image creation script.")
-		add_image(True)
+		configuration = {"images": []}
+		save_configuration(configuration)
+		add_container()
 		# The following commands get run again as the configuration needs to be reloaded
 		with open("config.json", "r") as config_file:
 			config_json = config_file.read()
 		configuration = json.loads(config_json)
 		return configuration
-
-def add_image(skip_load):
-	if skip_load == False:
-		configuration = load_configuration()
-	else:
-		configuration = {"images": []}
-	version = input("What version would you like this image to be?")
+		
+def add_image(version):
+	configuration = load_configuration()
 	name = "docker_mc"+version
 	if {"name":"docker_mc"+version} not in configuration["images"]:
 		create_image(version)
@@ -47,9 +45,30 @@ def create_image(version):
 		new_dockerfile = original_dockerfile.replace(original_version, version)
 		dockerfile.write(new_dockerfile)
 		dockerfile.close()
-	os.system("docker build -t docker_mc" + version + " --file Dockerfile_mc"+version + " .")
+	# os.system("docker build -t docker_mc" + version + " --file Dockerfile_mc"+version + " .")
 def add_container():
 	configuration = load_configuration()
+	add_image(input("What would you like the version to be?\n"))
+	
+def menu():
+	selection = input("""Action (type number or captalized word):
+  1) Add a new CONTAINER
+  2) Add an IMAGE
+  3) Configure RCON
+  4) EXIT
+""")
+	if(selection == "1" or selection == "container"):
+		add_container()
+	elif(selection == "2" or selection == "image"):
+		add_image(input("What would you like the version to be?\n"))
+	elif(selection == "3" or selection == "rcon"):
+		config_rcon()
+	elif(selection == "4" or selection == "exit"):
+		print("Exiting")
+		exit()
+	else:
+		print("Invalid selection")
+		menu()
 
 # Set up rcon 
 def config_rcon():
@@ -82,8 +101,9 @@ def config_rcon():
 
 
 print("This program will ask for authentication in order to use sudo\n")
+menu()
 # Load config
-load_configuration()
+
 
 """
 NOTES:
