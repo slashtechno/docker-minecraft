@@ -29,7 +29,7 @@ def load_configuration():
 def add_image(version, ram):
 	configuration = load_configuration()
 	name = "docker_mc-version"+version+"-ram"+ram
-	if {"name": name} not in configuration["images"] and {"ram": ram} not in configuration["images"]:
+	if {"name": name} not in configuration["images"]:
 		create_image(version, ram)
 		print(name+" created")
 		configuration["images"].append({"name": name, "version": version, "ram": ram})
@@ -48,10 +48,22 @@ def create_image(version, ram):
 	# os.system("docker build -t docker_mc"+version+ram + " --file Dockerfile_mc"+version+ram + " .")
 	print("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .")
 def add_container():
+	version = input("What would you like the version to be?\n")
+	ram = input("How much RAM would you like the container to use at most, in MiB?\n")
+	add_image(version, ram)
 	configuration = load_configuration()
-	add_image(input("What would you like the version to be?\n"), input("\nHow much RAM would you like the server to use, in MiB?\n"))
+	name = input("What would you like the name of the container to be?\n")
+	mc_port = input("What port would you like the minecraft server to use?\n")
+	mc_rcon = input("What port would you like the minecraft rcon server to use?\n")			
+	for image in configuration["images"]:
+		if(image["name"] == "docker_mc-version"+version+"-ram"+ram):
+			create_container(name, mc_port, mc_rcon, image["name"])
+			return
+	print("Error: Image not found")
+	menu()
+
 def create_container(name, mc_port, rcon_port, image):
-	os.system("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name" + name + " " + image)
+	print("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name" + name + " " + image)
 	
 def menu():
 	selection = input("""Action (type number or captalized words):
