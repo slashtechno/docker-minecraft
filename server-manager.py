@@ -50,7 +50,7 @@ def create_image(version, ram):
 def add_container():
 	configuration = load_configuration()
 	add_image(input("What would you like the version to be?\n"), input("\nHow much RAM would you like the server to use, in MiB?\n"))
-def create_container(name, mc_port, rcon_port, imageion):
+def create_container(name, mc_port, rcon_port, image):
 	os.system("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name" + name + " " + image)
 	
 def menu():
