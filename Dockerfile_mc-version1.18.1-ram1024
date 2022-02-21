@@ -23,7 +23,7 @@ RUN rm /root/minecraft/eula.txt
 RUN wget -O /root/minecraft/eula.txt https://raw.githubusercontent.com/slashtechno/docker-minecraft/master/eula.txt
 
 # Create Script
-RUN echo "#!/bin/bash\ncd /root/minecraft\njava -Xms128M -XmxMAXRAMM -jar spigot* nogui" > /runmcserver.sh
+RUN echo "#!/bin/bash\ncd /root/minecraft\njava -Xms128M -Xmx1024M -jar spigot* nogui" > /runmcserver.sh
 RUN chmod 777 /runmcserver.sh
 RUN chmod +x /runmcserver.sh
 # Download service
