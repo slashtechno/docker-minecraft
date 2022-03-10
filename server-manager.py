@@ -83,20 +83,22 @@ def menu():
 		i = 0
 		print("Select the image you want to remove:")
 		for image in configuration["images"]:
-			i += 1
-			print("  " + str(i) + ") " + image["name"] + " - " + image["version"] + " - " + image["ram"] + " MiB")
-		print("  " + str(i + 1) + ") Cancel")
-		selection = input("")
-		if(selection.isdigit()):
-			selection = int(selection)
-			if(selection < i):
-				configuration["images"].pop(selection-1)
-				save_configuration(configuration)
+			i += 1 # The same thing as i = i +1
+			print("  " + str(i) + ") " + image["name"] + " - " + image["version"] + " - " + image["ram"] + " MiB") # {space} 1) <image name> - <version> - <ram amount> MiB 
+		print("  " + str(i + 1) + ") Cancel") # At the end of the menu, add an option to cancel
+		selection = input("") # Ask for input without a prompt
+		if(selection.isdigit()): # If the input is a digit
+			selection = int(selection) #  Turn it into an integer
+			if(selection < i): # If the selection is valid, aka less than i
+				# Image removal from Docker needs to be added
+				# Dockerfile for the image should be removed
+				configuration["images"].pop(selection-1) # Remove the image selected from the list
+				save_configuration(configuration) # save the configuration
 		menu()
-	elif(selection == "4" or selection == "remove container"):
+	elif(selection == "4" or selection == "remove container"): # Will resemble image removal
 		print("Not yet implemented")
 		menu()
-	elif(selection == "5" or selection == "rcon"):
+	elif(selection == "5" or selection == "rcon"): # Majority of rcon support is added, however intergration with configuration is required
 		config_rcon()
 	elif(selection == "6" or selection == "exit"):
 		print("Exiting")
