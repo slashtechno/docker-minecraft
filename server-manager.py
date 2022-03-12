@@ -19,7 +19,6 @@ def load_configuration():
 		print("The configuration file is blank or does not exist.\nRunning image creation script.")
 		configuration = {"images": [], "containers": []}
 		save_configuration(configuration)
-		add_container()
 		# The following commands get run again as the configuration needs to be reloaded
 		with open("config.json", "r") as config_file:
 			config_json = config_file.read()
@@ -58,16 +57,15 @@ def add_container():
 	for image in configuration["images"]:
 		if(image["name"] == "docker_mc-version"+version+"-ram"+ram):
 			create_container(name, mc_port, mc_rcon, image)
-			return
-	print("Error: Image not found")
+			break
 	menu()
 
 def create_container(name, mc_port, rcon_port, image):
 	configuration = load_configuration()
-	if name not in configuration["containers"]:
-		configuration["containers"].append(name)
-	if name not in image["containers"]:
-		image["containers"].append(name)
+	if {"name": name} not in configuration["containers"]:
+		configuration["containers"].append({"name": name, "image": image})
+	if { "name": name} not in image["containers"]:
+		image["containers"].append({"name": name})
 	save_configuration(configuration)
 	print("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name " + name + " " + image["name"])
 	os.system("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name " + name + " " + image["name"])
@@ -99,13 +97,12 @@ def menu():
 			if(selection <= i): # If the selection is valid, aka less than i
 				confirmation = input("Are you sure you want to remove this image and every single cotnainer associated with it? If so, type \"Yes, I am sure I want to do this.\"\n")
 				if(confirmation == "Yes, I am sure I want to do this."):
-					# Image removal from Docker needs to be added
 					# Dockerfile for the image should be removed
 					image = configuration["images"][selection-1] # Get the image selected
 
 					# remove the containers associated with the image
 					for i in image["containers"]:
-						os.system("docker rm -f " + image["containers"][i])
+						os.system("docker rm -f " + image["containers"][i].image["name"])
 
 					# remove the image 
 					os.system("docker rm " + image["name"])
@@ -120,7 +117,25 @@ def menu():
 					menu()
 		menu()
 	elif(selection == "4" or selection == "remove container"): # Will resemble image removal
-		print("Not yet implemented")
+		configuration = load_configuration()
+		i = 0
+		for container in configuration["containers"]:
+			i += 1
+			print("  " + str(i) + ") " + container["name"])
+		print("  " + str(i + 1) + ") Cancel")
+		selection = input("")
+		if(selection.isdigit()):
+			selection = int(selection)
+			if(selection <= i):
+				confirmation = input("Are you sure you want to remove this container? If so, type \"Yes, I am sure I want to do this.\"\n")
+				if(confirmation == "Yes, I am sure I want to do this."):
+					# remove container from docker
+					os.system("docker rm -f " + configuration["containers"][selection-1]["name"])
+					configuration["containers"].pop(selection-1)
+					save_configuration(configuration)
+				else:
+					print("Canceling")
+					menu()
 		menu()
 	elif(selection == "5" or selection == "rcon"): # Majority of rcon support is added, however intergration with configuration is required
 		config_rcon()
