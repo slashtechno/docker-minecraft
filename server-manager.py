@@ -67,8 +67,8 @@ def create_container(name, mc_port, rcon_port, image):
 	if { "name": name} not in image["containers"]:
 		image["containers"].append({"name": name})
 	save_configuration(configuration)
-	print("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name " + name + " " + image["name"])
-	os.system("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name " + name + " " + image["name"])
+	print("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"])
+	os.system("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"])
 
 def menu():
 	selection = input("""Action (type number or captalized words): 
