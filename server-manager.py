@@ -17,7 +17,7 @@ def load_configuration():
 		return configuration
 	else:
 		print("The configuration file is blank or does not exist.\nRunning image creation script.")
-		configuration = {"images": []}
+		configuration = {"images": [], "containers": []}
 		save_configuration(configuration)
 		add_container()
 		# The following commands get run again as the configuration needs to be reloaded
@@ -32,7 +32,7 @@ def add_image(version, ram):
 	if {"name": name} not in configuration["images"]:
 		create_image(version, ram)
 		print(name+" created")
-		configuration["images"].append({"name": name, "version": version, "ram": ram})
+		configuration["images"].append({"name": name, "version": version, "ram": ram, "containers": []})
 		save_configuration(configuration)
 	
 def create_image(version, ram):
@@ -45,7 +45,7 @@ def create_image(version, ram):
 		new_dockerfile = new_dockerfile.replace("MAXRAM", ram)
 		dockerfile.write(new_dockerfile) 
 		dockerfile.close()
-	# os.system("docker build -t docker_mc"+version+ram + " --file Dockerfile_mc"+version+ram + " .")
+	os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .")
 	print("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .")
 def add_container():
 	version = input("What would you like the version to be?\n")
@@ -57,23 +57,30 @@ def add_container():
 	mc_rcon = input("What port would you like the minecraft rcon server to use?\n")			
 	for image in configuration["images"]:
 		if(image["name"] == "docker_mc-version"+version+"-ram"+ram):
-			create_container(name, mc_port, mc_rcon, image["name"])
+			create_container(name, mc_port, mc_rcon, image)
 			return
 	print("Error: Image not found")
 	menu()
 
 def create_container(name, mc_port, rcon_port, image):
-	print("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name" + name + " " + image)
-	
+	configuration = load_configuration()
+	if name not in configuration["containers"]:
+		configuration["containers"].append(name)
+	if name not in image["containers"]:
+		image["containers"].append(name)
+	save_configuration(configuration)
+	print("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name " + name + " " + image["name"])
+	os.system("docker run -t -d -p" + mc_port + "25565 -p" + rcon_port + "25575 --name " + name + " " + image["name"])
+
 def menu():
-	selection = input("""Action (type number or captalized words):
+	selection = input("""Action (type number or captalized words): 
   1) Add a new CONTAINER
   2) Add an IMAGE
   3) REMOVE an IMAGE
   4) REMOVE a CONTAINER
   5) Configure RCON
   6) EXIT
-""")
+""") # Options to list, stop, and start containers still needs to be added
 	if(selection == "1" or selection == "container"):
 		add_container()
 	elif(selection == "2" or selection == "image"):
@@ -89,11 +96,28 @@ def menu():
 		selection = input("") # Ask for input without a prompt
 		if(selection.isdigit()): # If the input is a digit
 			selection = int(selection) #  Turn it into an integer
-			if(selection < i): # If the selection is valid, aka less than i
-				# Image removal from Docker needs to be added
-				# Dockerfile for the image should be removed
-				configuration["images"].pop(selection-1) # Remove the image selected from the list
-				save_configuration(configuration) # save the configuration
+			if(selection <= i): # If the selection is valid, aka less than i
+				confirmation = input("Are you sure you want to remove this image and every single cotnainer associated with it? If so, type \"Yes, I am sure I want to do this.\"\n")
+				if(confirmation == "Yes, I am sure I want to do this."):
+					# Image removal from Docker needs to be added
+					# Dockerfile for the image should be removed
+					image = configuration["images"][selection-1] # Get the image selected
+
+					# remove the containers associated with the image
+					for i in image["containers"]:
+						os.system("docker rm -f " + image["containers"][i])
+
+					# remove the image 
+					os.system("docker rm " + image["name"])
+
+					# remove the Dockerfile
+					os.remove(image["name"].replace("docker", "Dockerfile"))
+					
+					configuration["images"].pop(selection-1) # Remove the image selected from the list
+					save_configuration(configuration) # save the configuration
+				else:
+					print("Canceling")
+					menu()
 		menu()
 	elif(selection == "4" or selection == "remove container"): # Will resemble image removal
 		print("Not yet implemented")
@@ -146,7 +170,7 @@ menu()
 NOTES:
 [ ] Addition of containers from JSON and system (port, version, name rcon_port, image)
 [ ] Removal of containers from JSON and system
-[ ] Removal of images from JSON and system
+[X] Removal of images from JSON and system
 [ ] Rcon support
 [ ] Support to accesss container's shell
 [ ] File transfer
