@@ -10,10 +10,10 @@ def save_configuration(configuration):
 		config_file.write(configuration_json)
 		config_file.close()
 def load_configuration():
-	if os.path.exists("config.json"):
-		with open("config.json", "r") as config_file:
-			config_json = config_file.read()
-		configuration = json.loads(config_json)
+	if os.path.exists("config.json"): # If config.json exists:
+		with open("config.json", "r") as config_file: # Open config.json for reading
+			config_json = config_file.read() # Read config.json
+		configuration = json.loads(config_json) # Turn config_json into a dictionary and set that to configuration
 		return configuration
 	else:
 		print("The configuration file is blank or does not exist.\nRunning image creation script.")
@@ -26,49 +26,48 @@ def load_configuration():
 		return configuration
 		
 def add_image(version, ram):
-	configuration = load_configuration()
-	name = "docker_mc-version"+version+"-ram"+ram
-	if {"name": name} not in configuration["images"]:
-		create_image(version, ram)
-		print(name+" created")
-		configuration["images"].append({"name": name, "version": version, "ram": ram, "containers": []})
+	configuration = load_configuration() # Load configuration
+	name = "docker_mc-version"+version+"-ram"+ram # Set name to docker_mc-version<version>-ram<ram>
+	if {"name": name} not in configuration["images"]: # If the name of the image to be added does not exist already in config.json:
+		create_image(version, ram) # Create image, passing the version and ram
+		print(name + " created")
+		configuration["images"].append({"name": name, "version": version, "ram": ram, "containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image in the form of a list 
 		save_configuration(configuration)
 	
 def create_image(version, ram):
 	# Copy Dockerfile
-	with open("Dockerfile", "r") as dockerfile:
+	with open("Dockerfile", "r") as dockerfile: # Open original Dockerfile for reading
 		original_dockerfile=dockerfile.read()
 		dockerfile.close()
-	with open("Dockerfile_mc-version"+version+"-ram"+ram, "w") as dockerfile:
-		new_dockerfile = original_dockerfile.replace(original_version, version)
-		new_dockerfile = new_dockerfile.replace("MAXRAM", ram)
+	with open("Dockerfile_mc-version"+version+"-ram"+ram, "w") as dockerfile: # Create a new Dockerfile named Dockerfile_mc-version<version>-ram<ram>
+		new_dockerfile = original_dockerfile.replace(original_version, version) # Replace the default version with the user inputed version
+		new_dockerfile = new_dockerfile.replace("MAXRAM", ram) # Replace the maximum RAM placeholder with user inputed ram
 		dockerfile.write(new_dockerfile) 
 		dockerfile.close()
-	os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .")
-	print("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .")
+	os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .") # Build the Dockerfile that was just made
 def add_container():
-	version = input("What would you like the version to be?\n")
-	ram = input("How much RAM would you like the container to use at most, in MiB?\n")
-	add_image(version, ram)
+	version = input("What would you like the version to be?\n") # Input version
+	ram = input("How much RAM would you like the container to use at most, in MiB?\n") # Input RAM
+	add_image(version, ram) # Pass version and ram to image addition 
 	configuration = load_configuration()
-	name = input("What would you like the name of the container to be?\n")
+	# Ask for various properties for the new container
+	name = input("What would you like the name of the container to be?\n") 
 	mc_port = input("What port would you like the minecraft server to use?\n")
 	mc_rcon = input("What port would you like the minecraft rcon server to use?\n")			
-	for image in configuration["images"]:
-		if(image["name"] == "docker_mc-version"+version+"-ram"+ram):
-			create_container(name, mc_port, mc_rcon, image)
-			break
-	menu()
+	for image in configuration["images"]: # Iterate over images
+		if(image["name"] == "docker_mc-version"+version+"-ram"+ram): # If an image matches:
+			create_container(name, mc_port, mc_rcon, image) # Start container creation, passing various variables
+			break # Exit the loop when an image is found and container created
+	menu() # Display menu
 
 def create_container(name, mc_port, rcon_port, image):
 	configuration = load_configuration()
-	if {"name": name} not in configuration["containers"]:
-		configuration["containers"].append({"name": name, "image": image})
-	if { "name": name} not in image["containers"]:
-		image["containers"].append({"name": name})
-	save_configuration(configuration)
-	print("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"])
-	os.system("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"])
+	if {"name": name} not in configuration["containers"]: # If the container's name does not exist in the list of containers:
+		configuration["containers"].append({"name": name, "image": image}) # Append to the list of containers with the the name of the container being created as well as what image it relies on
+	if { "name": name} not in image["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
+		image["containers"].append({"name": name}) # Append to the image's container list the name of the new container
+	save_configuration(configuration) # Save the configuration
+	os.system("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"]) # Create the container using Docker with a user generated name
 
 def menu():
 	selection = input("""Action (type number or captalized words): 
@@ -80,7 +79,7 @@ def menu():
   6) EXIT
 """) # Options to list, stop, and start containers still needs to be added
 	if(selection == "1" or selection == "container"):
-		add_container()
+		add_container() # Start container addition
 	elif(selection == "2" or selection == "image"):
 		add_image(input("What would you like the version to be?\n"), input("How much RAM would you like the image to use at most, in MiB?\n"))
 	elif(selection == "3" or selection == "remove image"):
@@ -177,7 +176,7 @@ def config_rcon():
 
 
 print("This program will ask for authentication in order to use sudo\n")
-menu()
+menu() # Show menu
 # Load config
 
 
