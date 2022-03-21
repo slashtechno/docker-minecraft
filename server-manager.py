@@ -69,6 +69,7 @@ def create_container(name, mc_port, rcon_port, image):
 	if { "name": name} not in image["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
 		image["containers"].append({"name": name}) # Append to the image's container list the name of the new container
 	save_configuration(configuration) # Save the configuration
+	print("[1m[41mDO NOT INTERACT WITH THE PROGRAM. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	os.system("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"]) # Create the container using Docker with a user generated name
 	config_rcon(name) # Start the rcon configuration
 
