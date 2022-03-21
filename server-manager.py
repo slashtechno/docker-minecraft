@@ -2,8 +2,6 @@ import os
 import json
 import re
 
-from gevent import config
-from soupsieve import select
 # Variables
 original_version="1.18.1"
 # Functions
