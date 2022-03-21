@@ -46,7 +46,8 @@ def create_image(version, ram):
 		new_dockerfile = new_dockerfile.replace("MAXRAM", ram) # Replace the maximum RAM placeholder with user inputed ram
 		dockerfile.write(new_dockerfile) 
 		dockerfile.close()
-	print("[1m[41mDO NOT INTERACT WITH THE PROGRAM. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
+	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
+	print("DON'T INTERACT WITH THE PROGRAM WHILE THE IMAGE IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
 	os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .") # Build the Dockerfile that was just made
 def add_container():
 	version = input("What would you like the version to be?\n") # Input version
@@ -70,18 +71,20 @@ def create_container(name, mc_port, rcon_port, image):
 	if { "name": name} not in image["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
 		image["containers"].append({"name": name}) # Append to the image's container list the name of the new container
 	save_configuration(configuration) # Save the configuration
-	print("[1m[41mDO NOT INTERACT WITH THE PROGRAM. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
+	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
+	print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
 	os.system("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"]) # Create the container using Docker with a user generated name
 	config_rcon(name) # Start the rcon configuration
 
 def menu():
-	selection = input("""Action (type number or captalized words as a lowercase word): 
+	print("""Action (type number or captalized words as a lowercase word): 
   1) Add a new CONTAINER
   2) Add an IMAGE
   3) Manage CONTAINERS
   4) Manage IMAGES
   5) EXIT
-""") # Options to list, stop, and start containers still needs to be added
+""")
+	selection = input("")
 	if(selection == "1" or selection == "container"):
 		add_container() # Start container addition
 	elif(selection == "2" or selection == "image"):
@@ -116,7 +119,7 @@ def manage_containers():
 
 
 def manage_container(container):
-	configuration= load_configuration
+	configuration = load_configuration
 	print("""What would you like to do with this container?
   1) Start
   2) Stop
@@ -234,11 +237,11 @@ menu() # Show menu
 
 """
 NOTES:
-[ ] Addition of containers from JSON and system (port, version, name rcon_port, image)
-[ ] Removal of containers from JSON and system
+[X] Addition of containers from JSON and system (port, version, name rcon_port, image)
+[X] Removal of containers from JSON and system
 [X] Removal of images from JSON and system
-[ ] Rcon support
+[X] Rcon support
 [ ] Support to accesss container's shell
 [ ] File transfer
-[ ] Abilty to start and stop containers
+[X] Abilty to start and stop containers
 """
