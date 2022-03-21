@@ -46,6 +46,7 @@ def create_image(version, ram):
 		new_dockerfile = new_dockerfile.replace("MAXRAM", ram) # Replace the maximum RAM placeholder with user inputed ram
 		dockerfile.write(new_dockerfile) 
 		dockerfile.close()
+	print("[1m[41mDO NOT INTERACT WITH THE PROGRAM. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .") # Build the Dockerfile that was just made
 def add_container():
 	version = input("What would you like the version to be?\n") # Input version
