@@ -124,6 +124,7 @@ def manage_containers():
 
 def manage_container(container):
 	configuration = load_configuration
+	container_name = container["name"]
 	print("""What would you like to do with this container?
   1) Start
   2) Stop
@@ -131,22 +132,25 @@ def manage_container(container):
   4) Remove
   5) Change RCON password
   6) Access Shell
-  8) Cancel""") # File transfer should be added later
+  7) CANCEL""") # File transfer should be added later
 	selection = input("")
 	if selection == "1" or selection == "start":
-		containerName = container["name"]
-		os.system(f"docker start {containerName}")
+		os.system(f"docker start {container_name}")
 	elif selection == "2" or selection == "stop":
-		containerName = container["name"]
-		os.system(f"docker stop {containerName}")
+		os.system(f"docker stop {container_name}")
 	elif selection == "3" or selection == "restart":
-		containerName = container["name"]
-		os.system(f"docker restart {containerName}")
+		os.system(f"docker restart {container_name}")
 	elif selection == "4" or selection == "remove":
 		delete_container(container)
 	elif selection == "5" or selection == "rcon":
 		config_rcon(container["name"])
-	menu()
+	elif selection == "6" or selection == "shell":
+		os.system(f"docker exec -it {container_name} bash")
+	elif selection == "7" or selection == "CANCEL":
+		menu()
+	else:
+		print("Invalid selection")
+		menu()
 
 def delete_container(container): # container paremeter should be a dictionary
 	configuration = load_configuration()
@@ -256,7 +260,7 @@ NOTES:
 [X] Removal of containers from JSON and system
 [X] Removal of images from JSON and system
 [X] Rcon support
-[ ] Support to accesss container's shell
+[X] Support to accesss container's shell
 [ ] File transfer
 [X] Abilty to start and stop containers
 """
