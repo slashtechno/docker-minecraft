@@ -60,16 +60,18 @@ def add_container():
 	mc_rcon = input("What port would you like the minecraft rcon server to use?\n")			
 	for image in configuration["images"]: # Iterate over images
 		if(image["name"] == "docker_mc-version"+version+"-ram"+ram): # If an image matches:
-			create_container(name, mc_port, mc_rcon, image) # Start container creation, passing various variables
+			image_index = configuration["images"].index(image)
+			print(image_index) # For debugging
+			create_container(name, mc_port, mc_rcon, image, image_index) # Start container creation, passing various variables. NOTE: the image paremeter is not needed
 			break # Exit the loop when an image is found and container created
 	menu() # Display menu
 
-def create_container(name, mc_port, rcon_port, image):
+def create_container(name, mc_port, rcon_port, image, image_index): # NOTE: the image paremeter is not needed
 	configuration = load_configuration()
 	if {"name": name} not in configuration["containers"]: # If the container's name does not exist in the list of containers:
-		configuration["containers"].append({"name": name, "image": image}) # Append to the list of containers with the the name of the container being created as well as what image it relies on
-	if { "name": name} not in image["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
-		image["containers"].append({"name": name}) # Append to the image's container list the name of the new container
+		configuration["containers"].append({"name": name, "image": image["name"]}) # Append to the list of containers with the the name of the container being created as well as what image it relies on
+	if { "name": name} not in configuration["images"][image_index]["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
+		configuration["images"][image_index]["containers"].append({"name": name}) # Append to the image's container list the name of the new container
 	save_configuration(configuration) # Save the configuration
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
