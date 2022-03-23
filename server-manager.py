@@ -59,7 +59,7 @@ def add_container():
 	mc_port = input("What port would you like the minecraft server to use?\n")
 	mc_rcon = input("What port would you like the minecraft rcon server to use?\n")			
 	for image in configuration["images"]: # Iterate over images
-		if(image["name"] == "docker_mc-version"+version+"-ram"+ram): # If an image matches:
+		if image["name"] == "docker_mc-version"+version+"-ram"+ram: # If an image matches:
 			image_index = configuration["images"].index(image)
 			print(image_index) # For debugging
 			create_container(name, mc_port, mc_rcon, image, image_index) # Start container creation, passing various variables. NOTE: the image paremeter is not needed
@@ -87,15 +87,15 @@ def menu():
   5) EXIT
 """)
 	selection = input("")
-	if(selection == "1" or selection == "container"):
+	if selection == "1" or selection == "container":
 		add_container() # Start container addition
-	elif(selection == "2" or selection == "image"):
+	elif selection == "2" or selection == "image":
 		add_image(input("What would you like the version to be?\n"), input("How much RAM would you like the image to use at most, in MiB?\n"))
-	elif(selection == "3" or selection == "containers"):
+	elif selection == "3" or selection == "containers":
 		manage_containers()
-	elif(selection == "4" or selection == "images"):
+	elif selection == "4" or selection == "images":
 		manage_images()
-	elif(selection == "5" or selection == "exit"):
+	elif selection == "5" or selection == "exit" :
 		print("Exiting")
 		exit()
 	else:
@@ -111,9 +111,9 @@ def manage_containers():
 		print("  " + str(i) + ") " + container["name"]) # {space} 1) container name
 	print("  " + str(i + 1) + ") Cancel") # At the end of the menu, add an option to cancel
 	selection = input("") # Ask for input without a prompt
-	if(selection.isdigit()): # If the input is a digit
+	if selection.isdigit(): # If the input is a digit
 		selection = int(selection) #  Turn it into an integer
-		if(selection <= i): # If the selection is valid, aka less than i
+		if selection <= i: # If the selection is valid, aka less than i
 			manage_container(configuration["containers"][selection-1])
 		else:
 			print("Canceling")
@@ -132,23 +132,23 @@ def manage_container(container):
   7) Access Shell
   8) Cancel""")
 	selection = input("")
-	if(selection == "1" or selection == "start"):
+	if selection == "1" or selection == "start":
 		containerName = container["name"]
 		os.system(f"docker start {containerName}")
-	elif(selection == "2" or selection == "stop"):
+	elif selection == "2" or selection == "stop":
 		containerName = container["name"]
 		os.system(f"docker stop {containerName}")
-	elif(selection == "3" or selection == "restart"):
+	elif selection == "3" or selection == "restart":
 		containerName = container["name"]
 		os.system(f"docker restart {containerName}")
-	elif(selection == "4" or selection == "remove"):
+	elif selection == "4" or selection == "remove":
 		confirmation = input("Are you sure you want to remove this container? If so, type \"Yes, I am sure I want to do this.\"\n")
-		if(confirmation == "Yes, I am sure I want to do this."):
+		if confirmation == "Yes, I am sure I want to do this.":
 			containerName = container["name"]
 			os.system(f"docker rm -f {containerName}")
 			configuration["containers"].pop(selection-1)
 			save_configuration(configuration)
-	elif(selection == "5" or selection == "rcon"):
+	elif selection == "5" or selection == "rcon":
 		config_rcon(container["name"])
 	menu()
 
@@ -161,9 +161,9 @@ def manage_images():
 		print("  " + str(i) + ") " + image["name"] + " - " + image["version"] + " - " + image["ram"] + " MiB") # {space} 1) <image name> - <version> - <ram amount> MiB 
 	print("  " + str(i + 1) + ") Cancel") # At the end of the menu, add an option to cancel
 	selection = input("") # Ask for input without a prompt
-	if(selection.isdigit()): # If the input is a digit
+	if selection.isdigit(): # If the input is a digit
 		selection = int(selection) #  Turn it into an integer
-		if(selection <= i): # If the selection is valid, aka less than i
+		if selection <= i: # If the selection is valid, aka less than i
 			manage_image(configuration["images"][selection-1]) # Get the image selected and pass it to manage_image(image)
 		else:
 			menu()
@@ -174,9 +174,9 @@ def manage_image(image):
   1) Remove
   2) Cancel""")
 	selection = input("")
-	if(selection == "1" or selection == "remove"):
+	if selection == "1" or selection == "remove":
 		confirmation = input("Are you sure you want to remove this image? By doing so, you will remove all containers assosiated with it. If so, type \"Yes, I am sure I want to do this.\"\n")
-		if(confirmation == "Yes, I am sure I want to do this."):
+		if confirmation == "Yes, I am sure I want to do this.":
 			image = configuration["images"][selection-1] # Get the image selected
 
 			# remove the containers associated with the image
