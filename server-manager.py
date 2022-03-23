@@ -1,3 +1,4 @@
+from distutils.command.config import config
 import os
 import json
 import re
@@ -114,6 +115,7 @@ def manage_containers():
 	if selection.isdigit(): # If the input is a digit
 		selection = int(selection) #  Turn it into an integer
 		if selection <= i: # If the selection is valid, aka less than i
+			print(configuration["containers"][selection-1]) # For debugging
 			manage_container(configuration["containers"][selection-1])
 		else:
 			print("Canceling")
@@ -128,9 +130,8 @@ def manage_container(container):
   3) Restart
   4) Remove
   5) Change RCON password
-  6) Transfer files
-  7) Access Shell
-  8) Cancel""")
+  6) Access Shell
+  8) Cancel""") # File transfer should be added later
 	selection = input("")
 	if selection == "1" or selection == "start":
 		containerName = container["name"]
@@ -142,16 +143,28 @@ def manage_container(container):
 		containerName = container["name"]
 		os.system(f"docker restart {containerName}")
 	elif selection == "4" or selection == "remove":
-		confirmation = input("Are you sure you want to remove this container? If so, type \"Yes, I am sure I want to do this.\"\n")
-		if confirmation == "Yes, I am sure I want to do this.":
-			containerName = container["name"]
-			os.system(f"docker rm -f {containerName}")
-			configuration["containers"].pop(selection-1)
-			save_configuration(configuration)
+		delete_container(container)
 	elif selection == "5" or selection == "rcon":
 		config_rcon(container["name"])
 	menu()
 
+def delete_container(container): # container paremeter should be a dictionary
+	configuration = load_configuration()
+	confirmation = input("Are you sure you want to remove this container? If so, type \"Yes, I am sure I want to do this.\"\n")
+	if confirmation == "Yes, I am sure I want to do this.":
+		container_name = container["name"]
+		# Remove container from list of containers and from the image it relies on
+		configuration["containers"].pop(configuration["containers"].index(container))
+		print(container["image"]) # For debugging
+		for image in configuration["images"]: # Iterate over images
+			if image["name"] == container["image"]: # When an image matches:
+				image_index = configuration["images"].index(image)
+		for i in configuration["images"][image_index]["containers"]:
+			if i["name"] == container["name"]:
+				container_rely_index = configuration["images"][image_index]["containers"].index(i)
+		configuration["images"][image_index]["containers"].pop(container_rely_index)
+		os.system(f"docker rm -f {container_name}")
+		save_configuration(configuration)
 def manage_images():
 	configuration = load_configuration()
 	i = 0
