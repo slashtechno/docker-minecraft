@@ -1,4 +1,3 @@
-from distutils.command.config import config
 import os
 import json
 import re
