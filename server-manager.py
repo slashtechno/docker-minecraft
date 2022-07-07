@@ -1,6 +1,12 @@
 import os
 import json
 import re
+import subprocess
+
+# subprocess.run debugging
+# command = []
+# space = " "
+# print(space.join(command))
 
 # Variables
 original_version="1.18.1"
@@ -47,8 +53,11 @@ def create_image(version, ram):
 		dockerfile.write(new_dockerfile) 
 		dockerfile.close()
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
-	print("DON'T INTERACT WITH THE PROGRAM WHILE THE IMAGE IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
-	os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .") # Build the Dockerfile that was just made
+	# print("DON'T INTERACT WITH THE PROGRAM WHILE THE IMAGE IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
+	image_name = "docker_mc-version"+version+"-ram"+ram
+	dockerfile_name = "Dockerfile_mc-version"+version+"-ram"+ram
+	# os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .") # Build the Dockerfile that was just made 
+	subprocess.run(["docker", "build", "-t", image_name, "--file", dockerfile_name, "."])
 def add_container():
 	version = input("What would you like the version to be?\n") # Input version
 	ram = input("How much RAM would you like the container to use at most, in MiB?\n") # Input RAM
@@ -61,7 +70,6 @@ def add_container():
 	for image in configuration["images"]: # Iterate over images
 		if image["name"] == "docker_mc-version"+version+"-ram"+ram: # If an image matches:
 			image_index = configuration["images"].index(image)
-			print(image_index) # For debugging
 			create_container(name, mc_port, mc_rcon, image, image_index) # Start container creation, passing various variables. NOTE: the image paremeter is not needed
 			break # Exit the loop when an image is found and container created
 	menu() # Display menu
@@ -74,8 +82,9 @@ def create_container(name, mc_port, rcon_port, image, image_index): # NOTE: the 
 		configuration["images"][image_index]["containers"].append({"name": name}) # Append to the image's container list the name of the new container
 	save_configuration(configuration) # Save the configuration
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
-	print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
-	os.system("docker run -t -d -p" + mc_port + ":25565 -p" + rcon_port + ":25575 --name " + name + " " + image["name"]) # Create the container using Docker with a user generated name
+	# print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
+	# os.system("docker run -t -d -p " + mc_port + ":25565 -p " + rcon_port + ":25575 --name " + name + " " + image["name"]) # Create the container using Docker with a user generated name
+	subprocess.run(["docker", "run", "-t", "-d", "-p", mc_port+":25565", "-p", rcon_port+":25575", "--name", name, image["name"]])
 	config_rcon(name) # Start the rcon configuration
 
 def menu():
@@ -114,7 +123,6 @@ def manage_containers():
 	if selection.isdigit(): # If the input is a digit
 		selection = int(selection) #  Turn it into an integer
 		if selection <= i: # If the selection is valid, aka less than i
-			print(configuration["containers"][selection-1]) # For debugging
 			manage_container(configuration["containers"][selection-1])
 		else:
 			print("Canceling")
@@ -134,17 +142,21 @@ def manage_container(container):
   7) CANCEL""") # File transfer should be added later
 	selection = input("")
 	if selection == "1" or selection == "start":
-		os.system(f"docker start {container_name}")
+		# os.system(f"docker start {container_name}")
+		subprocess.run(["docker", "start", container_name])
 	elif selection == "2" or selection == "stop":
-		os.system(f"docker stop {container_name}")
+		# os.system(f"docker stop {container_name}")
+		subprocess.run(["docker", "stop", container_name])
 	elif selection == "3" or selection == "restart":
-		os.system(f"docker restart {container_name}")
+		# os.system(f"docker restart {container_name}")
+		subprocess.run(["docker", "restart", container_name])
 	elif selection == "4" or selection == "remove":
 		delete_container(container)
 	elif selection == "5" or selection == "rcon":
 		config_rcon(container["name"])
 	elif selection == "6" or selection == "shell":
-		os.system(f"docker exec -it {container_name} bash")
+		# os.system(f"docker exec -it {container_name} bash")
+		subprocess.run(["docker", "exec", "it", container_name, "bash"])
 	elif selection == "7" or selection == "CANCEL":
 		menu()
 	else:
@@ -158,7 +170,6 @@ def delete_container(container): # container paremeter should be a dictionary
 		container_name = container["name"]
 		# Remove container from list of containers and from the image it relies on
 		configuration["containers"].pop(configuration["containers"].index(container))
-		print(container["image"]) # For debugging
 		for image in configuration["images"]: # Iterate over images
 			if image["name"] == container["image"]: # When an image matches:
 				image_index = configuration["images"].index(image)
@@ -166,7 +177,9 @@ def delete_container(container): # container paremeter should be a dictionary
 			if i["name"] == container["name"]:
 				container_rely_index = configuration["images"][image_index]["containers"].index(i)
 		configuration["images"][image_index]["containers"].pop(container_rely_index)
-		os.system(f"docker rm -f {container_name}")
+		# os.system(f"docker rm -f {container_name}")
+		subprocess.run(["docker", "stop", container["name"]])
+		subprocess.run(["docker", "rm", "-f", container["name"]])
 		save_configuration(configuration)
 def manage_images():
 	configuration = load_configuration()
@@ -193,19 +206,21 @@ def manage_image(image):
 	if selection == "1" or selection == "remove":
 		confirmation = input("Are you sure you want to remove this image? By doing so, you will remove all containers assosiated with it. If so, type \"Yes, I am sure I want to do this.\"\n")
 		if confirmation == "Yes, I am sure I want to do this.":
-			image = configuration["images"][selection-1] # Get the image selected
+			image = configuration["images"][int(selection)-1] # Get the image selected
 
 			# remove the containers associated with the image
 			for i in image["containers"]:
-				os.system("docker rm -f " + image["containers"][i].image["name"])
+				# os.system("docker rm -f " + image["containers"][i].image["name"])
+				subprocess.run(["docker", "rm", "-f", image["containers"][i].image["name"]])
 
 			# remove the image 
-			os.system("docker rmi " + image["name"])
+			# os.system("docker rmi " + image["name"])
+			subprocess.run(["docker", "image", "rm", image["name"]])
 
 			# remove the Dockerfile
 			os.remove(image["name"].replace("docker", "Dockerfile"))
 			
-			configuration["images"].pop(selection-1) # Subtract 1 from the selection because Python lists are zero indexed
+			configuration["images"].pop(int(selection)-1) # Subtract 1 from the selection because Python lists are zero indexed
 			save_configuration(configuration)
 	menu()
 
@@ -214,7 +229,8 @@ def change_rcon_password(container):
 	password = input("What would you like the password to be?\n")
 	print("Editing files\n")
 	# Get the current server_properties
-	os.system(f"docker cp {container}:/root/minecraft/server.properties ./server.properties")
+	# os.system(f"docker cp {container}:/root/minecraft/server.properties ./server.properties")
+	subprocess.run(["docker", "cp", container + ":/root/minecraft/server.properties", "./server.properties"])
 	with open ("server.properties", "r") as container_config_file:
 		container_config = container_config_file.read()
 		container_config_file.close()
@@ -239,14 +255,16 @@ def config_rcon(container):
 
 	# Remove server.properties
 	print("Removing server.properties in container\n")
-	os.system(f"sudo docker exec {container} rm -rf /root/minecraft/server.properties")
+	# os.system(f"docker exec {container} rm -rf /root/minecraft/server.properties")
+	subprocess.run(["docker", "exec", container, "rm", "-rf", "/root/minecraft/server.properties"])
 	# Copy server.properties to /root/minecraft/server.properties
 	print("Copying server.properties to the container")
-	os.system(f"sudo docker cp server.properties {container}:/root/minecraft/server.properties")
+	# os.system(f"docker cp server.properties {container}:/root/minecraft/server.properties")
+	subprocess.run(["docker", "cp", "server.properties", container + ":/root/minecraft/server.properties"])
 	# Restart the docker container
-	print("Retarting the container\n")
-	os.system(f"sudo docker restart {container}")
-
+	print("Restarting the container\n")
+	# os.system(f"docker restart {container}")
+	subprocess.run(["docker", "restart", container])
 
 print("This program will ask for authentication in order to use sudo\n")
 menu() # Show menu
