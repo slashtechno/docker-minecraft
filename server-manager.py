@@ -2,7 +2,7 @@ import os
 import json
 import re
 import subprocess
-
+import pathlib
 # subprocess.run debugging
 # command = []
 # space = " "
@@ -11,15 +11,15 @@ import subprocess
 # Variables
 original_version="1.18.1"
 # Functions
-
+config_file_path = str(pathlib.Path("config.json").resolve())
 def save_configuration(configuration):
-	with open("config.json", "w") as config_file:
+	with open(config_file_path, "w") as config_file:
 		configuration_json = json.dumps(configuration, indent=4)
 		config_file.write(configuration_json)
 		config_file.close()
 def load_configuration():
-	if os.path.exists("config.json"): # If config.json exists:
-		with open("config.json", "r") as config_file: # Open config.json for reading
+	if os.path.exists(config_file_path): # If config.json exists:
+		with open(config_file_path, "r") as config_file: # Open config.json for reading
 			config_json = config_file.read() # Read config.json
 		configuration = json.loads(config_json) # Turn config_json into a dictionary and set that to configuration
 		return configuration
@@ -28,7 +28,7 @@ def load_configuration():
 		configuration = {"images": [], "containers": []}
 		save_configuration(configuration)
 		# The following commands get run again as the configuration needs to be reloaded
-		with open("config.json", "r") as config_file:
+		with open(config_file_path, "r") as config_file:
 			config_json = config_file.read()
 		configuration = json.loads(config_json)
 		return configuration
