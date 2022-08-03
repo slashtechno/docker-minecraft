@@ -77,9 +77,9 @@ def add_container():
 def create_container(name, mc_port, rcon_port, image, image_index): # NOTE: the image paremeter is not needed
 	configuration = load_configuration()
 	if {"name": name} not in configuration["containers"]: # If the container's name does not exist in the list of containers:
-		configuration["containers"].append({"name": name, "image": image["name"]}) # Append to the list of containers with the the name of the container being created as well as what image it relies on
+		configuration["containers"].append({"name": name, "image": image["name"], "ports": {mc_port:"25565", rcon_port:"25575"}}) # Append to the list of containers with the the name of the container being created as well as what image it relies on
 	if { "name": name} not in configuration["images"][image_index]["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
-		configuration["images"][image_index]["containers"].append({"name": name, "ports": [mc_port, rcon_port]}) # Append to the image's container list the name of the new container
+		configuration["images"][image_index]["containers"].append({"name": name}) # Append to the image's container list the name of the new container
 	save_configuration(configuration) # Save the configuration
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	# print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
@@ -237,7 +237,7 @@ def change_rcon_password(container):
 	# Get the current server_properties
 	# os.system(f"docker cp {container}:/root/minecraft/server.properties ./server.properties")
 	subprocess.run(["docker", "cp", container + ":/root/minecraft/server.properties", "./server.properties"])
-	with open ("server.properties", "r") as container_config_file:
+	with open(str(pathlib.Path("server.properties").resolve()), "r") as container_config_file: # Migrate to pathlib
 		container_config = container_config_file.read()
 		container_config_file.close()
 	new_config = re.sub(container_config, "^rcon\.password=[a-zA-Z0-9\"`'#%&,:!;\-\_\.<>=@{}~\$\(\)\*\+\/\\\?\[\]\^\|]+$", f"rcon.password={password}")
@@ -249,13 +249,13 @@ def config_rcon(container):
 	# port=input("\nWhat is the port you would like to use for rcon?\n")
 	print("\nEditing files\n")
 	# Read original_server.properties
-	with open ("original_server.properties", "r") as original_config_file:
+	with open(str(pathlib.Path("original_server.properties").resolve()), "r") as original_config_file: # Migrate to pathlib
 		original_config = original_config_file.read()
 		original_config_file.close()
 	new_config = original_config.replace("rcon.password=", "rcon.password="+password)
 	# new_config = original_config.replace("rcon.port=25575", "rcon.port="+port)
 	# Write to server.properties
-	with open ("server.properties", "w") as server_config:
+	with open(str(pathlib.Path("server.properties").resolve()), "w") as server_config: # Migrate to pathlib
 		server_config.write(new_config)
 		server_config.close()
 
