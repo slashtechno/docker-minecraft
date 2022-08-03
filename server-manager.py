@@ -79,7 +79,7 @@ def create_container(name, mc_port, rcon_port, image, image_index): # NOTE: the 
 	if {"name": name} not in configuration["containers"]: # If the container's name does not exist in the list of containers:
 		configuration["containers"].append({"name": name, "image": image["name"]}) # Append to the list of containers with the the name of the container being created as well as what image it relies on
 	if { "name": name} not in configuration["images"][image_index]["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
-		configuration["images"][image_index]["containers"].append({"name": name}) # Append to the image's container list the name of the new container
+		configuration["images"][image_index]["containers"].append({"name": name, "ports": [mc_port, rcon_port]}) # Append to the image's container list the name of the new container
 	save_configuration(configuration) # Save the configuration
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	# print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
@@ -130,7 +130,7 @@ def manage_containers():
 
 
 def manage_container(container):
-	configuration = load_configuration
+	configuration = load_configuration()
 	container_name = container["name"]
 	print("""What would you like to do with this container?
   1) Start
@@ -139,7 +139,8 @@ def manage_container(container):
   4) Remove
   5) Change RCON password
   6) Access Shell
-  7) CANCEL""") # File transfer should be added later
+  7) Change PORT 
+  8) CANCEL""") # File transfer should be added later
 	selection = input("")
 	if selection == "1" or selection == "start":
 		# os.system(f"docker start {container_name}")
@@ -157,7 +158,9 @@ def manage_container(container):
 	elif selection == "6" or selection == "shell":
 		# os.system(f"docker exec -it {container_name} bash")
 		subprocess.run(["docker", "exec", "it", container_name, "bash"])
-	elif selection == "7" or selection == "CANCEL":
+	elif selection == "7" or selection == "port":
+		change_container_ports(container)
+	elif selection == "8" or selection == "CANCEL":
 		menu()
 	else:
 		print("Invalid selection")
@@ -181,6 +184,9 @@ def delete_container(container): # container paremeter should be a dictionary
 		subprocess.run(["docker", "stop", container["name"]])
 		subprocess.run(["docker", "rm", "-f", container["name"]])
 		save_configuration(configuration)
+
+def change_container_ports(container):
+	pass
 def manage_images():
 	configuration = load_configuration()
 	i = 0
@@ -269,15 +275,3 @@ def config_rcon(container):
 print("This program will ask for authentication in order to use sudo\n")
 menu() # Show menu
 # Load config
-
-
-"""
-NOTES:
-[X] Addition of containers from JSON and system (port, version, name rcon_port, image)
-[X] Removal of containers from JSON and system
-[X] Removal of images from JSON and system
-[X] Rcon support
-[X] Support to accesss container's shell
-[ ] File transfer
-[X] Abilty to start and stop containers
-"""
