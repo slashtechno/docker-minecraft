@@ -7,8 +7,8 @@
 
 ### To use  
 1. Clone the repo with `git clone https://github.com/slashtechno/docker-minecraft/`
-2. Change to the directory with `cd docker-minecraft`
-3, Install dependencies with `pip install -r requirements.txt` (`pip3` may need to be used instead)  
+2. Change to the directory with `cd docker-minecraft`. 
+3. Install dependencies with `pip install -r requirements.txt` (`pip3` may need to be used instead)  
 4. Run the script with `python3 server-manager.py` (you may need to use `python` instead of `python3`, and `sudo` may be required)  
 Done!  
 ### Credits  
