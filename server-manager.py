@@ -4,6 +4,7 @@ import re
 import subprocess
 import pathlib
 from prettytable import PrettyTable
+
 # subprocess.run debugging
 # command = []
 # space = " "
@@ -42,6 +43,7 @@ def add_image(version, ram):
 		print(name + " created")
 		configuration["images"].append({"name": name, "version": version, "ram": ram, "containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image in the form of a list 
 		save_configuration(configuration)
+	menu()
 	
 def create_image(version, ram):
 	# Copy Dockerfile
@@ -72,9 +74,8 @@ def add_container():
 		if image["name"] == "docker_mc-version"+version+"-ram"+ram: # If an image matches:
 			image_index = configuration["images"].index(image) # Get the index of the image
 			create_container(name, mc_port, mc_rcon, image, image_index) # Start container creation, passing various variables. NOTE: the image paremeter is not needed
-			break # Exit the loop when an image is found and container created
-	menu() # Display menu
-
+			break # Exit the for loop when an image is found and container created
+	menu()
 def create_container(name, mc_port, rcon_port, image, image_index): # NOTE: the image paremeter is not needed
 	configuration = load_configuration()
 	if {"name": name} not in configuration["containers"]: # If the container's name does not exist in the list of containers:
@@ -124,22 +125,21 @@ def manage_containers():
 	if selection.isdigit(): # If the input is a digit
 		selection = int(selection) #  Turn it into an integer
 		if selection <= i: # If the selection is valid, aka less than i
-			manage_container(configuration["containers"][selection-1])
-		else:
-			print("Canceling")
+			manage_container(configuration["containers"][selection-1], selection-1) # In addition to passing the container dictionary, pass the index
+		else:	
 			menu()
 
 
-def manage_container(container):
+def manage_container(container, container_index):
 	configuration = load_configuration()
 	container_name = container["name"]
 	print("""What would you like to do with this container?
-  1) Start
-  2) Stop
-  3) Restart
-  4) Remove
+  1) START
+  2) STOP
+  3) RESTART
+  4) REMOVE
   5) Change RCON password
-  6) Access Shell
+  6) Access SHELL
   7) Manage PORTS 
   8) CANCEL""") # File transfer should be added later
 	selection = input("").lower()
@@ -153,27 +153,32 @@ def manage_container(container):
 		# os.system(f"docker restart {container_name}")
 		subprocess.run(["docker", "restart", container_name])
 	elif selection == "4" or selection == "remove":
-		delete_container(container)
+		delete_container(container, container_index)
 	elif selection == "5" or selection == "rcon":
 		config_rcon(container["name"])
 	elif selection == "6" or selection == "shell":
 		# os.system(f"docker exec -it {container_name} bash")
 		subprocess.run(["docker", "exec", "-it", container_name, "bash"])
 	elif selection == "7" or selection == "ports":
-		change_container_ports(container)
+		manage_container_ports(container, container_index)
 	elif selection == "8" or selection == "CANCEL":
-		menu()
+		manage_containers()
 	else:
 		print("Invalid selection")
 		menu()
+	if container in configuration["containers"]: # If the container is deleted, this will be false
+		manage_container(container, container_index)
+	else:
+		print("Invalid selection")
+		manage_containers()
 
-def delete_container(container): # container paremeter should be a dictionary
+def delete_container(container, container_index): # container paremeter should be a dictionary
 	configuration = load_configuration()
 	confirmation = input("Are you sure you want to remove this container? If so, type \"Yes, I am sure I want to do this.\"\n")
 	if confirmation == "Yes, I am sure I want to do this.":
 		container_name = container["name"]
 		# Remove container from list of containers and from the image it relies on
-		configuration["containers"].pop(configuration["containers"].index(container))
+		configuration["containers"].pop(container_index)
 		for image in configuration["images"]: # Iterate over images
 			if image["name"] == container["image"]: # When an image matches:
 				image_index = configuration["images"].index(image)
@@ -186,23 +191,36 @@ def delete_container(container): # container paremeter should be a dictionary
 		subprocess.run(["docker", "rm", "-f", container["name"]])
 		save_configuration(configuration)
 
-def change_container_ports(container):
+def manage_container_ports(container, container_index):
 	configuration = load_configuration()
 	print("""Action: 
   1) LIST ports
-  2) CANCEL
+  2) ADD port 
+  3) CANCEL
 """)
 	selection = input("").lower()
-
 	if selection == "1" or selection == "list":
 		# print("| Host Port | Container Port |")
-		for host_port, container_port in configuration["containers"][configuration["containers"].index(container)]["ports"].items():
+		port_table = PrettyTable(["Host Port", "Container Port"	]) 
+		for host_port, container_port in configuration["containers"][container_index]["ports"].items():
 			# print(f"| {host_port} | {container_port} |")
-			port_table = PrettyTable(["Host Port", "Container Port"	]) 
+			# print(f"Host port: {host_port}\nContainer port: {container_port}")
 			port_table.add_row([host_port, container_port])
 		print(port_table)
-	if selection == "2" or selection == "CANCEL":
-		manage_container(container)
+		manage_container_ports(container, container_index)
+	elif selection == "2" or selection == "ADD":
+		host_port = input("What is the host port?\n")
+		container_port = input("What is the container port?\n")
+		configuration["containers"][container_index]["ports"][host_port] = container_port
+		print(configuration["containers"][container_index]["ports"]) # for debugging
+		save_configuration(configuration)
+		manage_container_ports(container, container_index)
+	elif selection == "3" or selection == "CANCEL":
+		manage_container(container, container_index)
+	else:
+		print("Invalid selection")
+		manage_container_ports(container, container_index)
+
 def manage_images():
 	configuration = load_configuration()
 	i = 0
@@ -217,6 +235,7 @@ def manage_images():
 		if selection <= i: # If the selection is valid, aka less than i
 			manage_image(configuration["images"][selection-1]) # Get the image selected and pass it to manage_image(image)
 		else:
+			print("Invalid selection")
 			menu()
 
 def manage_image(image):
@@ -244,8 +263,10 @@ def manage_image(image):
 			
 			configuration["images"].pop(int(selection)-1) # Subtract 1 from the selection because Python lists are zero indexed
 			save_configuration(configuration)
-	menu()
-
+	elif selection == 2 or selection == "cancel":
+		manage_images()
+	else:
+		manage_images()
 # Set up rcon 
 def change_rcon_password(container):
 	password = input("What would you like the password to be?\n")
@@ -260,7 +281,7 @@ def change_rcon_password(container):
 def config_rcon(container):
 	# Set up rcon 
 	# Request user input
-	print("In order to remotely access the console of the Minecraft server, rcon needs to be setup\nrcon is a protcol for remotely managing game servers")
+	print("To remotely access the console of the Minecraft server, rcon needs to be setup\nrcon is a protcol for remotely managing game servers")
 	password = input("What is the password you would like to set for rcon?\n")
 	# port=input("\nWhat is the port you would like to use for rcon?\n")
 	print("\nEditing files\n")
@@ -288,4 +309,5 @@ def config_rcon(container):
 	# os.system(f"docker restart {container}")
 	subprocess.run(["docker", "restart", container])
 
+print("To make a selection, type in the corresponding number or type in the capitalized keyword\nThen press enter\n")
 menu() # Show menu
