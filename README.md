@@ -18,3 +18,4 @@ Done!
 - [X] Migrate from `os.system` to `subprocess.run` 
 - [ ] Allow port changes (save current container as an image, and run image with new ports)
 - [X] Use `pathlib` library
+- [ ] Allow path to Docker binary to be changed. Default being `docker`
