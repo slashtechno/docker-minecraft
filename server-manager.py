@@ -26,7 +26,8 @@ def load_configuration():
 		configuration = json.loads(config_json) # Turn config_json into a dictionary and set that to configuration
 		return configuration
 	else:
-		print("The configuration file is blank or does not exist.\nRunning image creation script.")
+		# print("The configuration file is blank or does not exist.\nRunning image creation script.")
+		print("The configuration file is blank or does not exist.")
 		configuration = {"images": [], "containers": []}
 		save_configuration(configuration)
 		# The following commands get run again as the configuration needs to be reloaded
@@ -38,13 +39,15 @@ def load_configuration():
 def add_image(version, ram):
 	configuration = load_configuration() # Load configuration
 	name = "docker_mc-version"+version+"-ram"+ram # Set name to docker_mc-version<version>-ram<ram>
-	if {"name": name} not in configuration["images"]: # If the name of the image to be added does not exist already in config.json:
+	for image in configuration["images"]:
+		if image["name"] == name: # If the name of the image to be added does not exist already in config.json:
+			print(f"Image {name} already exists")
+			break
+	else:
 		create_image(version, ram) # Create image, passing the version and ram
 		print(name + " created")
-		configuration["images"].append({"name": name, "version": version, "ram": ram, "containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image in the form of a list 
+		configuration["images"].append({"name": name,"containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
 		save_configuration(configuration)
-	menu()
-	
 def create_image(version, ram):
 	# Copy Dockerfile
 	with open("Dockerfile", "r") as dockerfile: # Open original Dockerfile for reading
@@ -61,22 +64,22 @@ def create_image(version, ram):
 	dockerfile_name = "Dockerfile_mc-version"+version+"-ram"+ram
 	# os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .") # Build the Dockerfile that was just made 
 	subprocess.run(["docker", "build", "-t", image_name, "--file", dockerfile_name, "."])
-def add_container():
+def configure_new_container():
 	version = input("What would you like the version to be?\n") # Input version
 	ram = input("How much RAM would you like the container to use at most, in MiB?\n") # Input RAM
 	add_image(version, ram) # Pass version and ram to image addition 
 	configuration = load_configuration()
 	# Ask for various properties for the new container
-	name = input("What would you like the name of the container to be?\n") 
+	name = input("What would you like the name of the container to be? ([a-zA-Z0-9][a-zA-Z0-9_.-] are allowed)\n") 
 	mc_port = input("What port would you like the minecraft server to use?\n")
-	mc_rcon = input("What port would you like the minecraft rcon server to use?\n")			
+	rcon_port = input("What port would you like the minecraft rcon server to use?\n")			
 	for image in configuration["images"]: # Iterate over images
 		if image["name"] == "docker_mc-version"+version+"-ram"+ram: # If an image matches:
 			image_index = configuration["images"].index(image) # Get the index of the image
-			create_container(name, mc_port, mc_rcon, image, image_index) # Start container creation, passing various variables. NOTE: the image paremeter is not needed
+			create_container(mc_port, rcon_port, image, image_index, name) # Start container creation, passing various variables.
 			break # Exit the for loop when an image is found and container created
 	menu()
-def create_container(name, mc_port, rcon_port, image, image_index): # NOTE: the image paremeter is not needed
+def create_container(mc_port, rcon_port, image, image_index, name):
 	configuration = load_configuration()
 	if {"name": name} not in configuration["containers"]: # If the container's name does not exist in the list of containers:
 		configuration["containers"].append({"name": name, "image": image["name"], "ports": {mc_port:"25565", rcon_port:"25575"}}) # Append to the list of containers with container information; The first port is the host port, second is the container port
@@ -86,8 +89,26 @@ def create_container(name, mc_port, rcon_port, image, image_index): # NOTE: the 
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	# print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
 	# os.system("docker run -t -d -p " + mc_port + ":25565 -p " + rcon_port + ":25575 --name " + name + " " + image["name"]) # Create the container using Docker with a user generated name
-	subprocess.run(["docker", "run", "-t", "-d", "-p", mc_port+":25565", "-p", rcon_port+":25575", "--name", name, image["name"]])
+	for i in configuration["containers"]:
+		if i["name"] == name:
+			container = i
+			break
+		else:
+			print("Container not found in configuration")
+			
+	# subprocess.run(["docker", "run", "-t", "-d", "-p", mc_port+":25565", "-p", rcon_port+":25575", "--name", name, image["name"]])
+	port_args = []
+	for host_port, container_port in configuration["containers"][configuration["containers"].index(container)]["ports"].items():
+		port_args.append("-p")
+		port_args.append(host_port+":"+container_port)
+	run_command = ["docker", "run", "-t", "-d", "--name", name, image["name"]]
+	i = 0
+	for port in port_args:
+		run_command.insert(4+i, port)
+		i+= 1
+	subprocess.run(run_command)
 	config_rcon(name) # Start the rcon configuration
+
 
 def menu():
 	print("""Action: 
@@ -99,7 +120,7 @@ def menu():
 """)
 	selection = input("").lower()
 	if selection == "1" or selection == "container":
-		add_container() # Start container addition
+		configure_new_container() # Start container addition
 	elif selection == "2" or selection == "image":
 		add_image(input("What would you like the version to be?\n"), input("How much RAM would you like the image to use at most, in MiB?\n"))
 	elif selection == "3" or selection == "containers":
@@ -166,6 +187,7 @@ def manage_container(container, container_index):
 	else:
 		print("Invalid selection")
 		menu()
+	configuration = load_configuration()
 	if container in configuration["containers"]: # If the container is deleted, this will be false
 		manage_container(container, container_index)
 	else:
@@ -193,7 +215,7 @@ def delete_container(container, container_index): # container paremeter should b
 
 def manage_container_ports(container, container_index):
 	configuration = load_configuration()
-	print("""Action: 
+	print("""Action:
   1) LIST ports
   2) ADD port 
   3) CANCEL
@@ -208,13 +230,52 @@ def manage_container_ports(container, container_index):
 			port_table.add_row([host_port, container_port])
 		print(port_table)
 		manage_container_ports(container, container_index)
+
 	elif selection == "2" or selection == "ADD":
+		print("Changing ports will save the current container as a new image, and create a new container with the added ports from that image. The original container will be deleted.")
 		host_port = input("What is the host port?\n")
 		container_port = input("What is the container port?\n")
-		configuration["containers"][container_index]["ports"][host_port] = container_port
+		configuration["containers"][container_index]["ports"][host_port] = container_port # For example, {8080:80}
+		# container = configuration[["containers"][container_index]] # Update container as it was changed during port addition
 		print(configuration["containers"][container_index]["ports"]) # for debugging
+		new_image_name = input("""What would you like the new image to be named?
+Only lowercase letters may be used
+Numeric values are allowed
+Allowed special characters: . - / _
+Special characters may not prefix nor trail the image name
+Maximum length of an image name is 255 characters\n""")
+		old_image = configuration["containers"][container_index]["image"]
+		for image in configuration["images"]:
+			if image["name"] == old_image:
+				old_image = image
+				break
+		for i in configuration["images"][configuration["images"].index(old_image)]["containers"]:
+			if i == container["name"]:
+				configuration["images"][configuration["images"].index(old_image)]["containers"].pop(i)
+		configuration["containers"][container_index]["image"] = new_image_name
+		for image in configuration["images"]:
+			if image["name"] == new_image_name: # If the name of the image to be added does not exist already in config.json:
+				print(f"Image {new_image_name} already exists")
+				break
+		else:
+			subprocess.run(["docker", "stop", configuration["containers"][container_index]["name"]])
+			subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
+			print(new_image_name + " created")
+			configuration["images"].append({"name": new_image_name,"containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
+			save_configuration(configuration)
+		port_args = []
+		for host_port, container_port in configuration["containers"][container_index]["ports"].items():
+			port_args.append("-p")
+			port_args.append(host_port+":"+container_port)
+		run_command = ["docker", "run", "-t", "-d", "--name", configuration["containers"][container_index]["name"], image["name"]]
+		i = 0
+		for port in port_args:
+			run_command.insert(4+i, port)
+			i+= 1
+		subprocess.run(["docker", "rm", configuration["containers"][container_index]["name"]])
+		subprocess.run(run_command)
 		save_configuration(configuration)
-		manage_container_ports(container, container_index)
+		manage_container_ports(configuration["containers"][container_index], container_index)
 	elif selection == "3" or selection == "CANCEL":
 		manage_container(container, container_index)
 	else:
