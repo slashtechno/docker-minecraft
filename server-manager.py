@@ -213,6 +213,46 @@ def delete_container(container, container_index): # container paremeter should b
 		subprocess.run(["docker", "rm", "-f", container["name"]])
 		save_configuration(configuration)
 
+def rerun_container(container, container_index):
+	configuration = load_configuration()
+	new_image_name = input("""What would you like the new image to be named?
+Only lowercase letters may be used
+Numeric values are allowed
+Allowed special characters: . - / _
+Special characters may not prefix nor trail the image name
+Maximum length of an image name is 255 characters\n""")
+	old_image = configuration["containers"][container_index]["image"]
+	for image in configuration["images"]:
+		if image["name"] == old_image:
+			old_image = image
+			break
+	for i in configuration["images"][configuration["images"].index(old_image)]["containers"]:
+		if i == container["name"]:
+			configuration["images"][configuration["images"].index(old_image)]["containers"].pop(i)
+	configuration["containers"][container_index]["image"] = new_image_name
+	for image in configuration["images"]:
+		if image["name"] == new_image_name: # If the name of the image to be added does not exist already in config.json:
+			print(f"Image {new_image_name} already exists")
+			break
+	else:
+		subprocess.run(["docker", "stop", configuration["containers"][container_index]["name"]])
+		subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
+		print(new_image_name + " created")
+		configuration["images"].append({"name": new_image_name,"containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
+		save_configuration(configuration)
+	port_args = []
+	for host_port, container_port in configuration["containers"][container_index]["ports"].items():
+		port_args.append("-p")
+		port_args.append(host_port+":"+container_port)
+	run_command = ["docker", "run", "-t", "-d", "--name", configuration["containers"][container_index]["name"], image["name"]]
+	i = 0
+	for port in port_args:
+		run_command.insert(4+i, port)
+		i+= 1
+	subprocess.run(["docker", "rm", configuration["containers"][container_index]["name"]])
+	subprocess.run(run_command)
+	save_configuration(configuration)
+	
 def manage_container_ports(container, container_index):
 	configuration = load_configuration()
 	print("""Action:
@@ -230,7 +270,6 @@ def manage_container_ports(container, container_index):
 			port_table.add_row([host_port, container_port])
 		print(port_table)
 		manage_container_ports(container, container_index)
-
 	elif selection == "2" or selection == "ADD":
 		print("Changing ports will save the current container as a new image, and create a new container with the added ports from that image. The original container will be deleted.")
 		host_port = input("What is the host port?\n")
@@ -238,42 +277,7 @@ def manage_container_ports(container, container_index):
 		configuration["containers"][container_index]["ports"][host_port] = container_port # For example, {8080:80}
 		# container = configuration[["containers"][container_index]] # Update container as it was changed during port addition
 		print(configuration["containers"][container_index]["ports"]) # for debugging
-		new_image_name = input("""What would you like the new image to be named?
-Only lowercase letters may be used
-Numeric values are allowed
-Allowed special characters: . - / _
-Special characters may not prefix nor trail the image name
-Maximum length of an image name is 255 characters\n""")
-		old_image = configuration["containers"][container_index]["image"]
-		for image in configuration["images"]:
-			if image["name"] == old_image:
-				old_image = image
-				break
-		for i in configuration["images"][configuration["images"].index(old_image)]["containers"]:
-			if i == container["name"]:
-				configuration["images"][configuration["images"].index(old_image)]["containers"].pop(i)
-		configuration["containers"][container_index]["image"] = new_image_name
-		for image in configuration["images"]:
-			if image["name"] == new_image_name: # If the name of the image to be added does not exist already in config.json:
-				print(f"Image {new_image_name} already exists")
-				break
-		else:
-			subprocess.run(["docker", "stop", configuration["containers"][container_index]["name"]])
-			subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
-			print(new_image_name + " created")
-			configuration["images"].append({"name": new_image_name,"containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
-			save_configuration(configuration)
-		port_args = []
-		for host_port, container_port in configuration["containers"][container_index]["ports"].items():
-			port_args.append("-p")
-			port_args.append(host_port+":"+container_port)
-		run_command = ["docker", "run", "-t", "-d", "--name", configuration["containers"][container_index]["name"], image["name"]]
-		i = 0
-		for port in port_args:
-			run_command.insert(4+i, port)
-			i+= 1
-		subprocess.run(["docker", "rm", configuration["containers"][container_index]["name"]])
-		subprocess.run(run_command)
+		rerun_container(container, container_index)
 		save_configuration(configuration)
 		manage_container_ports(configuration["containers"][container_index], container_index)
 	elif selection == "3" or selection == "CANCEL":
