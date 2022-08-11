@@ -231,12 +231,19 @@ def delete_container(container, container_index): # container paremeter should b
 
 def rerun_container(container, container_index):
 	configuration = load_configuration()
-	new_image_name = input("""What would you like the new image to be named?
+	while True:	
+		new_image_name = input("""What would you like the new image to be named?
 Only lowercase letters may be used
 Numeric values are allowed
 Allowed special characters: . - / _
 Special characters may not prefix nor trail the image name
-Maximum length of an image name is 255 characters\n""")
+Maximum length of an image name is 255 characters\n""")	
+		for image in configuration["images"]:
+			if image["name"] == new_image_name: # If the name of the image to be added does not exist already in config.json:
+				print(f"\nImage {new_image_name} already exists\n") # Perhaps allow the user to add exclamation marks to the start and end of the image name to override this
+				break
+		else:
+			break
 	old_image = configuration["containers"][container_index]["image"]
 	for image in configuration["images"]:
 		if image["name"] == old_image:
@@ -247,16 +254,11 @@ Maximum length of an image name is 255 characters\n""")
 			configuration["images"][configuration["images"].index(old_image)]["containers"].pop(configuration["images"][configuration["images"].index(old_image)]["containers"].index(i))
 			break
 	configuration["containers"][container_index]["image"] = new_image_name
-	for image in configuration["images"]:
-		if image["name"] == new_image_name: # If the name of the image to be added does not exist already in config.json:
-			print(f"Image {new_image_name} already exists")
-			break
-	else:
-		subprocess.run(["docker", "stop", configuration["containers"][container_index]["name"]])
-		subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
-		print(new_image_name + " created")
-		configuration["images"].append({"name": new_image_name,"containers": [container["name"]]}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
-		save_configuration(configuration)
+	subprocess.run(["docker", "stop", configuration["containers"][container_index]["name"]])
+	subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
+	print(new_image_name + " created")
+	configuration["images"].append({"name": new_image_name,"containers": [container["name"]]}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
+	save_configuration(configuration)
 	port_args = []
 	for host_port, container_port in configuration["containers"][container_index]["ports"].items():
 		port_args.append("-p")
@@ -275,7 +277,8 @@ def manage_container_ports(container, container_index):
 	print("""Action:
   1) LIST ports
   2) ADD port 
-  3) CANCEL
+  3) REMOVE port
+  4) CANCEL
 """)
 	selection = input("").lower()
 	if selection == "1" or selection == "list":
@@ -293,6 +296,17 @@ def manage_container_ports(container, container_index):
 		container_port = input("What is the container port?\n")
 		configuration["containers"][container_index]["ports"][host_port] = container_port # For example, {8080:80}
 		container = configuration["containers"][container_index] # Update container as it was changed during port addition
+		save_configuration(configuration)
+		rerun_container(container, container_index)
+		manage_container_ports(configuration["containers"][container_index], container_index)
+	elif selection == "3" or selection == "remove":
+		print("Changing ports will save the current container as a new image, and create a new container with the added ports from that image. The original container will be deleted.")
+		port_table = PrettyTable(["Host Port", "Container Port"]) 
+		for host_port, container_port in configuration["containers"][container_index]["ports"].items():
+			port_table.add_row([host_port, container_port])
+		print(port_table)
+		selection = input("Enter the host port which you would like to remove (both the host and container port will be removed)\n")
+		configuration["containers"][container_index]["ports"].pop(selection)
 		save_configuration(configuration)
 		rerun_container(container, container_index)
 		manage_container_ports(configuration["containers"][container_index], container_index)
