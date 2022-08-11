@@ -2,3 +2,4 @@ server.properties
 config.json
 log
 Dockerfile_mc-version*
+.vscode/
