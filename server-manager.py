@@ -125,7 +125,8 @@ def menu():
   2) Add an IMAGE
   3) Manage CONTAINERS
   4) Manage IMAGES
-  5) EXIT
+  5) Remove all UNUSED images
+  6) EXIT
 """)
 	selection = input("").lower()
 	if selection == "1" or selection == "container":
@@ -136,7 +137,9 @@ def menu():
 		manage_containers()
 	elif selection == "4" or selection == "images":
 		manage_images()
-	elif selection == "5" or selection == "exit" :
+	elif selection == "5" or selection == "unused":
+		remove_unused_images()
+	elif selection == "6" or selection == "exit" :
 		print("Exiting")
 		exit()
 	else:
@@ -316,6 +319,16 @@ def manage_container_ports(container, container_index):
 		print("Invalid selection")
 		manage_container_ports(container, container_index)
 
+
+def remove_unused_images():
+	configuration = load_configuration()
+	confirmation = input("Are you sure you want to remove all unused images? If you're sure, type \"Yes, I am sure I want to do this.\"\n")
+	if confirmation == "Yes, I am sure I want to do this.":
+		for image in configuration["images"]:
+			if len(image["containers"]) == 0:
+				delete_image(image=image, skip_confirm=True) 
+	menu()
+
 def manage_images():
 	configuration = load_configuration()
 	i = 0
@@ -329,12 +342,29 @@ def manage_images():
 	if selection.isdigit(): # If the input is a digit
 		selection = int(selection) #  Turn it into an integer
 		if selection <= i: # If the selection is valid, aka less than i
-			manage_image(configuration["images"][selection-1]) # Get the image selected and pass it to manage_image(image)
+			manage_image(image = configuration["images"][selection-1]) # Get the image selected and pass it to manage_image(image)
 		elif selection == i+1:
 			menu()
 		else:
 			print("Invalid selection")
 			menu()
+
+def delete_image(image, skip_confirm):
+	configuration = load_configuration()
+	if skip_confirm:
+		confirmation = "Yes, I am sure I want to do this."
+	else:
+		confirmation = input("Are you sure you want to remove this image? In order to do so, you must have no containers which rely on the image. If you're sure, type \"Yes, I am sure I want to do this.\"\n")
+	if confirmation == "Yes, I am sure I want to do this.":
+		if len(image["containers"]) == 0:
+			# remove the image 
+			# os.system("docker rmi " + image["name"])
+			subprocess.run(["docker", "image", "rm", image["name"]])
+
+			configuration["images"].pop(configuration["images"].index(image))
+			save_configuration(configuration)
+	else:
+		print("You still have images which rely on this image")
 
 def manage_image(image):
 	configuration = load_configuration()
@@ -343,24 +373,15 @@ def manage_image(image):
   2) Cancel""")
 	selection = input("").lower()
 	if selection == "1" or selection == "remove":
-		confirmation = input("Are you sure you want to remove this image? In order to do so, you must have no containers which rely on the image. If you're sure, type \"Yes, I am sure I want to do this.\"\n")
-		if confirmation == "Yes, I am sure I want to do this.":
-			if len(image["containers"]) == 0:
-				# remove the image 
-				# os.system("docker rmi " + image["name"])
-				subprocess.run(["docker", "image", "rm", image["name"]])
-
-				configuration["images"].pop(configuration["images"].index(image))
-				save_configuration(configuration)
-			else:
-				print("You still have images which rely on this image")
+		delete_image(image=image)
 	elif selection == "2" or selection == "cancel":
 		manage_images()
 	else:
-		manage_image(image)
+		manage_image(image=image)
 	# configuration = load_configuration()
+	configuration = load_configuration()
 	if image in configuration["images"]:
-		manage_image(image)
+		manage_image(image=image)
 	else:
 		print("Image no longer exists")
 		manage_images()
@@ -407,4 +428,4 @@ def config_rcon(container):
 	subprocess.run(["docker", "restart", container])
 
 print("To make a selection, type in the corresponding number or type in the capitalized keyword\nThen press enter\n")
-menu() # Show menu
+menu() # Show menu 
