@@ -16,7 +16,7 @@ Done!
 
 ### Roadmap  
 - [X] Migrate from `os.system` to `subprocess.run` 
-- [ ] Allow port changes (save current container as an image, and run image with new ports)  
+- [X] Allow port changes (save current container as an image, and run image with new ports)  
 - [X] Use `pathlib` library  
 - [ ] Allow path to Docker binary to be changed. Default being `docker`  
 - [ ] Possibly migrate to the Docker API or [Python on Whales](https://github.com/gabrieldemarmiesse/python-on-whales)  
