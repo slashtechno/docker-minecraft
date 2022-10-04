@@ -96,8 +96,8 @@ def configure_new_container():
 def create_container(mc_port, rcon_port, image, image_index, name):
 	configuration = load_configuration()
 	if {"name": name} not in configuration["containers"]: # If the container's name does not exist in the list of containers:
-		configuration["containers"].append({"name": name, "image": image["name"], "ports": {mc_port:"25565", rcon_port:"25575"}}) # Append to the list of containers with container information; The first port is the host port, second is the container port
-	if { "name": name} not in configuration["images"][image_index]["containers"]: # If the image that the container relies does not contain the container in the list of containers that rely on it:
+		configuration["containers"].append({"name": name, "image": image["name"], "ports": [(mc_port, "25565"), (rcon_port, "25575")]}) # Append to the list of containers with container information; The first port is the host port, second is the container port
+	if { "name": name} not in configuration["images"][image_index]["containers"]: # If the image that the container relies on does not contain the container in the list of containers that rely on it:
 		configuration["images"][image_index]["containers"].append(name) # Append to the image's container list the name of the new container
 	save_configuration(configuration) # Save the configuration
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
@@ -109,17 +109,9 @@ def create_container(mc_port, rcon_port, image, image_index, name):
 	else:
 		print("Container not found in configuration")
 			
-	# subprocess.run(["docker", "run", "-t", "-d", "-p", mc_port+":25565", "-p", rcon_port+":25575", "--name", name, image["name"]])
-	port_args = []
-	for host_port, container_port in configuration["containers"][configuration["containers"].index(container)]["ports"].items():
-		port_args.append("-p")
-		port_args.append(host_port+":"+container_port)
-	run_command = ["docker", "run", "-t", "-d", "--name", name, image["name"]]
 	i = 0
-	for port in port_args:
-		run_command.insert(4+i, port)
-		i+= 1
-	subprocess.run(run_command)
+	logging.debug(["containers"][configuration["containers"].index(container)]["ports"])
+	docker.run(tty=True, detach=True, name=name, publish=container["ports"], image=image["name"])
 	config_rcon(name) # Start the rcon configuration
 
 
@@ -261,17 +253,7 @@ Maximum length of an image name is 255 characters\n""")
 	print(new_image_name + " created")
 	configuration["images"].append({"name": new_image_name,"containers": [container["name"]]}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
 	save_configuration(configuration)
-	port_args = []
-	for host_port, container_port in configuration["containers"][container_index]["ports"].items():
-		port_args.append("-p")
-		port_args.append(host_port+":"+container_port)
-	run_command = ["docker", "run", "-t", "-d", "--name", configuration["containers"][container_index]["name"], new_image_name]
-	i = 0
-	for port in port_args:
-		run_command.insert(4+i, port)
-		i+= 1
-	subprocess.run(["docker", "rm", configuration["containers"][container_index]["name"]])
-	subprocess.run(run_command)
+	docker.run(tty=True, detach=True, name=configuration["containers"][container_index]["name"], publish=configuration["containers"][container_index]["ports"], image=image["name"])
 	save_configuration(configuration)
 	
 def manage_container_ports(container, container_index):
@@ -284,12 +266,9 @@ def manage_container_ports(container, container_index):
 """)
 	selection = input("").lower()
 	if selection == "1" or selection == "list":
-		# print("| Host Port | Container Port |")
 		port_table = PrettyTable(["Host Port", "Container Port"	]) 
-		for host_port, container_port in configuration["containers"][container_index]["ports"].items():
-			# print(f"| {host_port} | {container_port} |")
-			# print(f"Host port: {host_port}\nContainer port: {container_port}")
-			port_table.add_row([host_port, container_port])
+		for port_tuple in configuration["containers"][container_index]["ports"]:
+			port_table.add_row([port_tuple[0], port_tuple[1]])
 		print(port_table)
 		manage_container_ports(container, container_index)
 	elif selection == "2" or selection == "add":
@@ -303,12 +282,12 @@ def manage_container_ports(container, container_index):
 		manage_container_ports(configuration["containers"][container_index], container_index)
 	elif selection == "3" or selection == "remove":
 		print("Changing ports will save the current container as a new image, and create a new container with the added ports from that image. The original container will be deleted.")
-		port_table = PrettyTable(["Host Port", "Container Port"]) 
-		for host_port, container_port in configuration["containers"][container_index]["ports"].items():
-			port_table.add_row([host_port, container_port])
+		port_table = PrettyTable(["Removal ID", "Host Port", "Container Port"]) 
+		for port_tuple in configuration["containers"][container_index]["ports"]:
+			port_table.add_row([str(configuration["containers"][container_index]["ports"].index(port_tuple)-1), port_tuple[0], port_tuple[1]])
 		print(port_table)
-		selection = input("Enter the host port which you would like to remove (both the host and container port will be removed)\n")
-		configuration["containers"][container_index]["ports"].pop(selection)
+		removal_id = input("Enter the removal ID for the port combination\n")
+		configuration["containers"][container_index]["ports"].pop(removal_id)
 		save_configuration(configuration)
 		rerun_container(container, container_index)
 		manage_container_ports(configuration["containers"][container_index], container_index)
