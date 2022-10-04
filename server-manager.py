@@ -3,7 +3,10 @@ import json
 import re
 import subprocess
 import pathlib
+import logging
+
 from prettytable import PrettyTable
+from python_on_whales import docker
 
 # subprocess.run debugging
 # command = []
@@ -12,6 +15,7 @@ from prettytable import PrettyTable
 
 # Variables
 original_version="1.18.1"
+logging.basicConfig(level=logging.DEBUG)
 # Functions
 config_file_path = str(pathlib.Path("config.json").resolve())
 def save_configuration(configuration):
@@ -50,10 +54,10 @@ def add_image(version, ram):
 		save_configuration(configuration)
 def create_image(version, ram):
 	# Copy Dockerfile
-	with open("Dockerfile", "r") as dockerfile: # Open original Dockerfile for reading
+	with open(str(pathlib.Path("Dockerfile").resolve()), "r") as dockerfile: # Open original Dockerfile for reading
 		original_dockerfile=dockerfile.read()
 		dockerfile.close()
-	with open("Dockerfile_mc-version"+version+"-ram"+ram, "w") as dockerfile: # Create a new Dockerfile named Dockerfile_mc-version<version>-ram<ram>
+	with open(str(pathlib.Path("Dockerfile_mc-version"+version+"-ram"+ram).resolve()), "w") as dockerfile: # Create a new Dockerfile named Dockerfile_mc-version<version>-ram<ram>
 		new_dockerfile = original_dockerfile.replace(original_version, version) # Replace the default version with the user inputed version
 		new_dockerfile = new_dockerfile.replace("MAXRAM", ram) # Replace the maximum RAM placeholder with user inputed ram
 		dockerfile.write(new_dockerfile) 
@@ -61,10 +65,11 @@ def create_image(version, ram):
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	# print("DON'T INTERACT WITH THE PROGRAM WHILE THE IMAGE IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
 	image_name = "docker_mc-version"+version+"-ram"+ram
-	dockerfile_name = pathlib.Path("Dockerfile_mc-version"+version+"-ram"+ram).resolve()
-	# os.system("docker build -t docker_mc-version"+version+"-ram"+ram + " --file Dockerfile_mc-version"+version+"-ram"+ram + " .") # Build the Dockerfile that was just made 
-	subprocess.run(["docker", "build", "-t", image_name, "--file", str(dockerfile_name), "."])
-	pathlib.Path.unlink(dockerfile_name)
+	dockerfile_path = pathlib.Path("Dockerfile_mc-version"+version+"-ram"+ram).resolve()
+	# subprocess.run(["docker", "build", "-t", image_name, "--file", str(dockerfile_path), "."])
+	print("Image building...")
+	docker.buildx.build(tags=image_name, file=dockerfile_path, context_path=".", progress="plain")
+	pathlib.Path.unlink(dockerfile_path)
 def configure_new_container():
 	configuration = load_configuration()
 	version = input("What would you like the version to be?\n") # Input version
@@ -97,7 +102,6 @@ def create_container(mc_port, rcon_port, image, image_index, name):
 	save_configuration(configuration) # Save the configuration
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
 	# print("DON'T INTERACT WITH THE PROGRAM WHILE THE CONTAINER IS BEING CREATED, DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING")
-	# os.system("docker run -t -d -p " + mc_port + ":25565 -p " + rcon_port + ":25575 --name " + name + " " + image["name"]) # Create the container using Docker with a user generated name
 	for i in configuration["containers"]:
 		if i["name"] == name:
 			container = i
@@ -178,20 +182,16 @@ def manage_container(container, container_index):
   8) CANCEL""") # File transfer should be added later
 	selection = input("").lower()
 	if selection == "1" or selection == "start":
-		# os.system(f"docker start {container_name}")
 		subprocess.run(["docker", "start", container_name])
 	elif selection == "2" or selection == "stop":
-		# os.system(f"docker stop {container_name}")
 		subprocess.run(["docker", "stop", container_name])
 	elif selection == "3" or selection == "restart":
-		# os.system(f"docker restart {container_name}")
 		subprocess.run(["docker", "restart", container_name])
 	elif selection == "4" or selection == "remove":
 		delete_container(container, container_index)
 	elif selection == "5" or selection == "rcon":
 		config_rcon(container["name"])
 	elif selection == "6" or selection == "shell":
-		# os.system(f"docker exec -it {container_name} bash")
 		subprocess.run(["docker", "exec", "-it", container_name, "bash"])
 	elif selection == "7" or selection == "ports":
 		manage_container_ports(container, container_index)
@@ -227,7 +227,6 @@ def delete_container(container, container_index): # container paremeter should b
 		else:
 			print("Container not found")
 		configuration["images"][image_index]["containers"].pop(container_rely_index)
-		# os.system(f"docker rm -f {container_name}")
 		subprocess.run(["docker", "stop", container["name"]])
 		subprocess.run(["docker", "rm", "-f", container["name"]])
 		save_configuration(configuration)
@@ -358,7 +357,6 @@ def delete_image(image, skip_confirm):
 	if confirmation == "Yes, I am sure I want to do this.":
 		if len(image["containers"]) == 0:
 			# remove the image 
-			# os.system("docker rmi " + image["name"])
 			subprocess.run(["docker", "image", "rm", image["name"]])
 
 			configuration["images"].pop(configuration["images"].index(image))
@@ -390,7 +388,6 @@ def change_rcon_password(container):
 	password = input("What would you like the password to be?\n")
 	print("Editing files")
 	# Get the current server_properties
-	# os.system(f"docker cp {container}:/root/minecraft/server.properties ./server.properties")
 	subprocess.run(["docker", "cp", container + ":/root/minecraft/server.properties", "./server.properties"])
 	with open(str(pathlib.Path("server.properties").resolve()), "r") as container_config_file: # Migrate to pathlib
 		container_config = container_config_file.read()
@@ -416,15 +413,12 @@ def config_rcon(container):
 
 	# Remove server.properties
 	print("Removing server.properties in container")
-	# os.system(f"docker exec {container} rm -rf /root/minecraft/server.properties")
 	subprocess.run(["docker", "exec", container, "rm", "-rf", "/root/minecraft/server.properties"])
 	# Copy server.properties to /root/minecraft/server.properties
 	print("Copying server.properties to the container")
-	# os.system(f"docker cp server.properties {container}:/root/minecraft/server.properties")
 	subprocess.run(["docker", "cp", "server.properties", container + ":/root/minecraft/server.properties"])
 	# Restart the docker container
 	print("Restarting the container")
-	# os.system(f"docker restart {container}")
 	subprocess.run(["docker", "restart", container])
 
 print("To make a selection, type in the corresponding number or type in the capitalized keyword\nThen press enter\n")

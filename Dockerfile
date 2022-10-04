@@ -10,7 +10,7 @@ RUN apt-get upgrade -y
 RUN echo "America/New_York" > /etc/timezone
 
 # Install software
-RUN DEBIAN_FRONTEND=noninteractive apt-get install git curl wget openjdk-17-jdk -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install git curl wget openjdk-17-jdk -y --fix-missing
 
 # Setup Minecraft Server
 RUN cd /root
