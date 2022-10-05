@@ -18,8 +18,7 @@ Done!
 - [X] Migrate from `os.system` to `subprocess.run` 
 - [X] Allow port changes (save current container as an image, and run image with new ports)  
 - [X] Use `pathlib` library  
-- [ ] Allow path to Docker binary to be changed. Default being `docker`  
-- [ ] Possibly migrate to the Docker API or [Python on Whales](https://github.com/gabrieldemarmiesse/python-on-whales)  
+- [X] Possibly migrate to the Docker API or [Python on Whales](https://github.com/gabrieldemarmiesse/python-on-whales)  
     - [ ] Check names of **all** existing containers and images when a new container or image is being created  
     - [ ] Instead of relying on container and image names, rely on the IDs (could be possible without the Docker API)  
 - [ ] Allow name changes to containers and images
