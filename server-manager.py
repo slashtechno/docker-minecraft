@@ -15,7 +15,7 @@ from python_on_whales import docker
 
 # Variables
 original_version="1.18.1"
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 # Functions
 config_file_path = str(pathlib.Path("config.json").resolve())
 def save_configuration(configuration):
@@ -31,7 +31,7 @@ def load_configuration():
 		return configuration
 	else:
 		# print("The configuration file is blank or does not exist.\nRunning image creation script.")
-		print("The configuration file is blank or does not exist.")
+		logging.info("The configuration file is blank or does not exist.")
 		configuration = {"images": [], "containers": []}
 		save_configuration(configuration)
 		# The following commands get run again as the configuration needs to be reloaded
@@ -45,11 +45,11 @@ def add_image(version, ram):
 	name = "docker_mc-version"+version+"-ram"+ram # Set name to docker_mc-version<version>-ram<ram>
 	for image in configuration["images"]:
 		if image["name"] == name: # If the name of the image to be added does not exist already in config.json:
-			print(f"Image {name} already exists")
+			logging.info(f"Image {name} already exists")
 			break
 	else:
 		create_image(version, ram) # Create image, passing the version and ram
-		print(name + " created")
+		logging.info(name + " created")
 		configuration["images"].append({"name": name, "containers": []}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
 		save_configuration(configuration)
 def create_image(version, ram):
@@ -67,7 +67,7 @@ def create_image(version, ram):
 	image_name = "docker_mc-version"+version+"-ram"+ram
 	dockerfile_path = pathlib.Path("Dockerfile_mc-version"+version+"-ram"+ram).resolve()
 	# subprocess.run(["docker", "build", "-t", image_name, "--file", str(dockerfile_path), "."])
-	print("Image building...")
+	logging.info("Image building...")
 	docker.buildx.build(tags=image_name, file=dockerfile_path, context_path=".", progress="plain")
 	pathlib.Path.unlink(dockerfile_path)
 def configure_new_container():
@@ -107,7 +107,7 @@ def create_container(mc_port, rcon_port, image, image_index, name):
 			container = i
 			break
 	else:
-		print("Container not found in configuration")
+		logging.error("Container not found in configuration")
 			
 	i = 0
 	logging.debug(["containers"][configuration["containers"].index(container)]["ports"])
@@ -136,10 +136,9 @@ def menu():
 	elif selection == "5" or selection == "unused":
 		remove_unused_images()
 	elif selection == "6" or selection == "exit" :
-		print("Exiting")
 		exit()
 	else:
-		print("Invalid selection")
+		logging.warn("Invalid selection")
 		menu()
 	menu() # Repeat
 
@@ -194,7 +193,7 @@ def manage_container(container, container_index):
 	elif selection == "8" or selection == "CANCEL":
 		manage_containers()
 	else:
-		print("Invalid selection")
+		logging.warn("Invalid selection")
 		manage_container(container, container_index)
 	configuration = load_configuration()
 	if container in configuration["containers"]: # If the container is deleted, this will be false
@@ -214,14 +213,14 @@ def delete_container(container, container_index): # container paremeter should b
 				image_index = configuration["images"].index(i)
 				break
 		else:
-			print("Could not find image")
+			logging.error("Could not find image")
 		for i in configuration["images"][image_index]["containers"]:
 			container_rely_index = configuration["images"][image_index]["containers"].index(i)
 			if configuration["images"][image_index]["containers"][container_rely_index] == container["name"]:
 				# container_rely_index = configuration["images"][image_index]["containers"].index(i)
 				break
 		else:
-			print("Container not found")
+			logging.error("Container not found")
 		configuration["images"][image_index]["containers"].pop(container_rely_index)
 		# subprocess.run(["docker", "stop", container["name"]])
 		docker.container.stop(container["name"])
@@ -240,7 +239,7 @@ Special characters may not prefix nor trail the image name
 Maximum length of an image name is 255 characters\n""")	
 		for image in configuration["images"]:
 			if image["name"] == new_image_name: # If the name of the image to be added does not exist already in config.json:
-				print(f"\nImage {new_image_name} already exists\n") # Perhaps allow the user to add exclamation marks to the start and end of the image name to override this
+				logging.warn(f"\nImage {new_image_name} already exists\n") # Perhaps allow the user to add exclamation marks to the start and end of the image name to override this
 				break
 		else:
 			break
@@ -258,7 +257,7 @@ Maximum length of an image name is 255 characters\n""")
 	docker.container.stop(configuration["containers"][container_index]["name"])
 	# subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
 	docker.container.commit(configuration["containers"][container_index]["name"], new_image_name)
-	print(new_image_name + " created")
+	logging.info(new_image_name + " created")
 	# Perhaps allow deletion of old image if it has no dependents
 	configuration["images"].append({"name": new_image_name,"containers": [container["name"]]}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
 	save_configuration(configuration)
@@ -303,7 +302,7 @@ def manage_container_ports(container, container_index):
 	elif selection == "4" or selection == "cancel":
 		manage_container(container, container_index)
 	else:
-		print("Invalid selection")
+		logging.warn("Invalid selection")
 		manage_container_ports(container, container_index)
 
 
@@ -350,7 +349,7 @@ def delete_image(image, skip_confirm):
 			configuration["images"].pop(configuration["images"].index(image))
 			save_configuration(configuration)
 	else:
-		print("You still have containers which rely on this image")
+		logging.warn("You still have containers which rely on this image")
 
 def manage_image(image):
 	configuration = load_configuration()
@@ -374,7 +373,7 @@ def manage_image(image):
 # Set up rcon 
 def change_rcon_password(container_name):
 	password = input("What would you like the password to be?\n")
-	print("Editing files")
+	logging.info("Editing files")
 	# Get the current server_properties
 	# subprocess.run(["docker", "cp", container_name + ":/root/minecraft/server.properties", str(pathlib.Path("server.properties").resolve())])
 	docker.container.copy((container_name, "/root/minecraft/server.properties"),  pathlib.Path("server.properties").resolve())
@@ -388,7 +387,7 @@ def config_rcon(container_name):
 	print("To remotely access the console of the Minecraft server, rcon needs to be setup\nrcon is a protcol for remotely managing game servers")
 	password = input("What is the password you would like to set for rcon?\n")
 	# port=input("\nWhat is the port you would like to use for rcon?\n")
-	print("Editing files")
+	logging.info("Editing files")
 	# Read original_server.properties
 	with open(str(pathlib.Path("original_server.properties").resolve()), "r") as original_config_file: # Migrate to pathlib
 		original_config = original_config_file.read()
@@ -401,15 +400,15 @@ def config_rcon(container_name):
 		server_config.close()
 
 	# Remove server.properties
-	print("Removing server.properties in container")
+	logging.info("Removing server.properties in container")
 	# subprocess.run(["docker", "exec", container_name, "rm", "-rf", "/root/minecraft/server.properties"])
 	docker.container.execute(container_name, "rm -rf /root/minecraft/server.properties")
 	# Copy server.properties to /root/minecraft/server.properties
-	print("Copying server.properties to the container")
+	logging.info("Copying server.properties to the container")
 	# subprocess.run(["docker", "cp", str(pathlib.Path("server.properties").resolve()), container_name + ":/root/minecraft/server.properties"])
 	docker.container.copy((pathlib.Path("server.properties").resolve(), (container_name, "/root/minecraft/server.properties")))
 	# Restart the docker container
-	print("Restarting the container")
+	logging.info("Restarting the container")
 	# subprocess.run(["docker", "restart", container_name])
 	docker.container.restart(container_name)
 print("To make a selection, type in the corresponding number or type in the capitalized keyword\nThen press enter\n")
