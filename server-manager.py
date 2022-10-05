@@ -174,17 +174,21 @@ def manage_container(container, container_index):
   8) CANCEL""") # File transfer should be added later
 	selection = input("").lower()
 	if selection == "1" or selection == "start":
-		subprocess.run(["docker", "start", container_name])
+		# subprocess.run(["docker", "start", container_name])
+		docker.container.start(container_name)
 	elif selection == "2" or selection == "stop":
-		subprocess.run(["docker", "stop", container_name])
+		# subprocess.run(["docker", "stop", container_name])
+		docker.container.stop(container_name)
 	elif selection == "3" or selection == "restart":
 		subprocess.run(["docker", "restart", container_name])
+		docker.container.restart(container_name)
 	elif selection == "4" or selection == "remove":
 		delete_container(container, container_index)
 	elif selection == "5" or selection == "rcon":
-		config_rcon(container["name"])
+		change_rcon_password(container["name"])
 	elif selection == "6" or selection == "shell":
-		subprocess.run(["docker", "exec", "-it", container_name, "bash"])
+		# subprocess.run(["docker", "exec", "-it", container_name, "bash"])]
+		docker.container.exec(container_name, interactive=True, tty=True, command="bash")
 	elif selection == "7" or selection == "ports":
 		manage_container_ports(container, container_index)
 	elif selection == "8" or selection == "CANCEL":
@@ -219,8 +223,10 @@ def delete_container(container, container_index): # container paremeter should b
 		else:
 			print("Container not found")
 		configuration["images"][image_index]["containers"].pop(container_rely_index)
-		subprocess.run(["docker", "stop", container["name"]])
-		subprocess.run(["docker", "rm", "-f", container["name"]])
+		# subprocess.run(["docker", "stop", container["name"]])
+		docker.container.stop(container["name"])
+		# subprocess.run(["docker", "rm", "-f", container["name"]])
+		docker.container.remove(container["name"], force=True)
 		save_configuration(configuration)
 
 def rerun_container(container, container_index):
@@ -248,9 +254,12 @@ Maximum length of an image name is 255 characters\n""")
 			configuration["images"][configuration["images"].index(old_image)]["containers"].pop(configuration["images"][configuration["images"].index(old_image)]["containers"].index(i))
 			break
 	configuration["containers"][container_index]["image"] = new_image_name
-	subprocess.run(["docker", "stop", configuration["containers"][container_index]["name"]])
-	subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
+	# subprocess.run(["docker", "stop", configuration["containers"][container_index]["name"]])
+	docker.container.stop(configuration["containers"][container_index]["name"])
+	# subprocess.run(["docker", "commit", configuration["containers"][container_index]["name"], new_image_name])
+	docker.container.commit(configuration["containers"][container_index]["name"], new_image_name)
 	print(new_image_name + " created")
+	# Perhaps allow deletion of old image if it has no dependents
 	configuration["images"].append({"name": new_image_name,"containers": [container["name"]]}) # Append to the list of images. "containers" is a key that tracks what containers rely on the image.
 	save_configuration(configuration)
 	docker.run(tty=True, detach=True, name=configuration["containers"][container_index]["name"], publish=configuration["containers"][container_index]["ports"], image=image["name"])
@@ -336,12 +345,12 @@ def delete_image(image, skip_confirm):
 	if confirmation == "Yes, I am sure I want to do this.":
 		if len(image["containers"]) == 0:
 			# remove the image 
-			subprocess.run(["docker", "image", "rm", image["name"]])
-
+			# subprocess.run(["docker", "image", "rm", image["name"]])
+			docker.image.remove(image["name"])
 			configuration["images"].pop(configuration["images"].index(image))
 			save_configuration(configuration)
 	else:
-		print("You still have images which rely on this image")
+		print("You still have containers which rely on this image")
 
 def manage_image(image):
 	configuration = load_configuration()
@@ -363,16 +372,17 @@ def manage_image(image):
 		print("Image no longer exists")
 		manage_images()
 # Set up rcon 
-def change_rcon_password(container):
+def change_rcon_password(container_name):
 	password = input("What would you like the password to be?\n")
 	print("Editing files")
 	# Get the current server_properties
-	subprocess.run(["docker", "cp", container + ":/root/minecraft/server.properties", "./server.properties"])
+	# subprocess.run(["docker", "cp", container_name + ":/root/minecraft/server.properties", str(pathlib.Path("server.properties").resolve())])
+	docker.container.copy((container_name, "/root/minecraft/server.properties"),  pathlib.Path("server.properties").resolve())
 	with open(str(pathlib.Path("server.properties").resolve()), "r") as container_config_file: # Migrate to pathlib
 		container_config = container_config_file.read()
 		container_config_file.close()
 	new_config = re.sub(container_config, "^rcon\.password=[a-zA-Z0-9\"`'#%&,:!;\-\_\.<>=@{}~\$\(\)\*\+\/\\\?\[\]\^\|]+$", f"rcon.password={password}")
-def config_rcon(container):
+def config_rcon(container_name):
 	# Set up rcon 
 	# Request user input
 	print("To remotely access the console of the Minecraft server, rcon needs to be setup\nrcon is a protcol for remotely managing game servers")
@@ -392,13 +402,15 @@ def config_rcon(container):
 
 	# Remove server.properties
 	print("Removing server.properties in container")
-	subprocess.run(["docker", "exec", container, "rm", "-rf", "/root/minecraft/server.properties"])
+	# subprocess.run(["docker", "exec", container_name, "rm", "-rf", "/root/minecraft/server.properties"])
+	docker.container.execute(container_name, "rm -rf /root/minecraft/server.properties")
 	# Copy server.properties to /root/minecraft/server.properties
 	print("Copying server.properties to the container")
-	subprocess.run(["docker", "cp", "server.properties", container + ":/root/minecraft/server.properties"])
+	# subprocess.run(["docker", "cp", str(pathlib.Path("server.properties").resolve()), container_name + ":/root/minecraft/server.properties"])
+	docker.container.copy((pathlib.Path("server.properties").resolve(), (container_name, "/root/minecraft/server.properties")))
 	# Restart the docker container
 	print("Restarting the container")
-	subprocess.run(["docker", "restart", container])
-
+	# subprocess.run(["docker", "restart", container_name])
+	docker.container.restart(container_name)
 print("To make a selection, type in the corresponding number or type in the capitalized keyword\nThen press enter\n")
 menu() # Show menu 
