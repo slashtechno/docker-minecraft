@@ -17,13 +17,13 @@ RUN cd /root
 RUN mkdir /root/minecraft
 RUN cd /root/minecraft
 RUN wget -O /root/minecraft/BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-RUN cd /root/minecraft/; java -Xmx1024M -jar /root/minecraft/BuildTools.jar --rev 1.18.1
+RUN cd /root/minecraft/; java -Xmx1024M -jar /root/minecraft/BuildTools.jar --rev 1.19.2
 RUN cd /root/minecraft/; java -Xms128M -Xmx1024M -jar /root/minecraft/spigot* nogui
 RUN rm /root/minecraft/eula.txt
 RUN wget -O /root/minecraft/eula.txt https://raw.githubusercontent.com/slashtechno/docker-minecraft/master/eula.txt
 
 # Create Script
-RUN echo "#!/bin/bash\ncd /root/minecraft\njava -Xms128M -XmxMAXRAMM -jar spigot* nogui" > /runmcserver.sh
+RUN echo "#!/bin/bash\ncd /root/minecraft\njava -Xms128M -Xmx2048M -jar spigot* nogui" > /runmcserver.sh
 RUN chmod 777 /runmcserver.sh
 RUN chmod +x /runmcserver.sh
 # Download service

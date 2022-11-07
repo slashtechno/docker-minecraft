@@ -14,7 +14,8 @@ from python_on_whales import docker
 # print(space.join(command))
 
 # Variables
-original_version="1.18.1"
+original_version="1.19.2"
+original_ram = "2048"
 logging.basicConfig(level=logging.INFO)
 # Functions
 config_file_path = str(pathlib.Path("config.json").resolve())
@@ -59,7 +60,7 @@ def create_image(version, ram):
 		dockerfile.close()
 	with open(str(pathlib.Path("Dockerfile_mc-version"+version+"-ram"+ram).resolve()), "w") as dockerfile: # Create a new Dockerfile named Dockerfile_mc-version<version>-ram<ram>
 		new_dockerfile = original_dockerfile.replace(original_version, version) # Replace the default version with the user inputed version
-		new_dockerfile = new_dockerfile.replace("MAXRAM", ram) # Replace the maximum RAM placeholder with user inputed ram
+		new_dockerfile = new_dockerfile.replace(original_ram, ram) # Replace the maximum RAM placeholder with user inputed ram
 		dockerfile.write(new_dockerfile) 
 		dockerfile.close()
 	# print("\u001b[1m\u001b[41mDO int. DOING SO MAY RUN UNINTENTIONAL COMMANDS AS THE SCRIPT IS STILL RUNNING") # Using ANSI escape codes to make the text red and bold
