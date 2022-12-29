@@ -22,3 +22,4 @@ Done!
     - [ ] Check names of **all** existing containers and images when a new container or image is being created  
     - [ ] Instead of relying on container and image names, rely on the IDs (could be possible without the Docker API)  
 - [ ] Allow name changes to containers and images
+- [ ] Switch to [`docker export`](https://docs.docker.com/engine/reference/commandline/export/)
