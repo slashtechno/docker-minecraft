@@ -18,7 +18,7 @@ prettytable==3.3.0
 pydantic==1.9.1
 pyparsing==3.0.9
 python-on-whales==0.52.0
-requests==2.28.1
+requests==2.31.0
 smart-open==5.2.1
 srsly==2.4.4
 thinc==8.1.0
